@@ -1,16 +1,33 @@
 package com.aplus.locknative.ui
 
+import android.content.Context
+import android.content.ContextWrapper
 import android.widget.Toast
 import androidx.annotation.DrawableRes
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -21,11 +38,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import com.aplus.locknative.R
 
 /**
@@ -50,6 +80,17 @@ fun AplusLockApp() {
             )
         }
 
+        // Account test được ghim sẵn để mỗi lần build test chỉ cần bấm Đăng nhập.
+        var loginAccount by rememberSaveable { mutableStateOf("admin@aplus.vn") }
+        var loginPassword by rememberSaveable { mutableStateOf("123456") }
+        var registerName by rememberSaveable { mutableStateOf("Aplus Demo") }
+        var registerPhone by rememberSaveable { mutableStateOf("0900000001") }
+        var registerEmail by rememberSaveable { mutableStateOf("owner@aplus.vn") }
+        var registerPassword by rememberSaveable { mutableStateOf("123456") }
+        var registerOtp by rememberSaveable { mutableStateOf("888888") }
+        var forgotAccount by rememberSaveable { mutableStateOf("admin@aplus.vn") }
+        var forgotOtp by rememberSaveable { mutableStateOf("888888") }
+
         fun show(message: String) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
@@ -57,6 +98,15 @@ fun AplusLockApp() {
         fun go(next: String) {
             route = next
             if (keyRoutes.contains(next)) lastKeyRoute = next
+        }
+
+        fun loginNow(message: String = "Đăng nhập thành công") {
+            if (loginAccount.isBlank() || loginPassword.isBlank()) {
+                show("Vui lòng nhập tài khoản và mật khẩu")
+                return
+            }
+            show(message)
+            go("home_dashboard")
         }
 
         fun doPrimaryAction(spec: Ui31Screen) {
@@ -99,10 +149,58 @@ fun AplusLockApp() {
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier.fillMaxSize()
                 )
+                // Ảnh mock có status bar giả 15:23. App dùng status bar thật của máy,
+                // nên lớp này che phần status giả trong ảnh mà không làm lệch layout.
+                FakeStatusBarMask()
+                AuthNativeLayer(
+                    route = spec.route,
+                    loginAccount = loginAccount,
+                    onLoginAccountChange = { loginAccount = it },
+                    loginPassword = loginPassword,
+                    onLoginPasswordChange = { loginPassword = it },
+                    registerName = registerName,
+                    onRegisterNameChange = { registerName = it },
+                    registerPhone = registerPhone,
+                    onRegisterPhoneChange = { registerPhone = it },
+                    registerEmail = registerEmail,
+                    onRegisterEmailChange = { registerEmail = it },
+                    registerPassword = registerPassword,
+                    onRegisterPasswordChange = { registerPassword = it },
+                    registerOtp = registerOtp,
+                    onRegisterOtpChange = { registerOtp = it },
+                    forgotAccount = forgotAccount,
+                    onForgotAccountChange = { forgotAccount = it },
+                    forgotOtp = forgotOtp,
+                    onForgotOtpChange = { forgotOtp = it },
+                )
                 Ui31Hotspots(
                     route = spec.route,
                     locked = isLocked,
                     onNavigate = ::go,
+                    onLogin = { loginNow() },
+                    onRegister = {
+                        if (registerName.isBlank() || registerPhone.isBlank() || registerEmail.isBlank() || registerPassword.isBlank()) {
+                            show("Vui lòng nhập đủ thông tin đăng ký")
+                        } else {
+                            show("Tạo tài khoản thành công")
+                            go("home_dashboard")
+                        }
+                    },
+                    onForgotSubmit = {
+                        if (forgotAccount.isBlank()) {
+                            show("Vui lòng nhập email hoặc số điện thoại")
+                        } else {
+                            show("Đã gửi mã xác thực khôi phục")
+                        }
+                    },
+                    onQuickLogin = { method ->
+                        authenticateBiometricLogin(
+                            context = context,
+                            methodName = method,
+                            onSuccess = { loginNow("Đăng nhập nhanh bằng $method") },
+                            onFallback = { loginNow("Thiết bị chưa bật $method, dùng đăng nhập nhanh mock") }
+                        )
+                    },
                     onBack = {
                         route = when (spec.route) {
                             "register", "forgot_password" -> "login"
@@ -135,6 +233,10 @@ private fun Ui31Hotspots(
     route: String,
     locked: Boolean,
     onNavigate: (String) -> Unit,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit,
+    onForgotSubmit: () -> Unit,
+    onQuickLogin: (String) -> Unit,
     onBack: () -> Unit,
     onHome: () -> Unit,
     onKey: () -> Unit,
@@ -161,16 +263,19 @@ private fun Ui31Hotspots(
 
         when (route) {
             "login" -> {
-                Hit(w, h, 0.08f, 0.361f, 0.92f, 0.388f) { onNavigate("home_dashboard") }
-                Hit(w, h, 0.08f, 0.397f, 0.47f, 0.425f) { onNavigate("register") }
-                Hit(w, h, 0.53f, 0.397f, 0.92f, 0.425f) { onNavigate("forgot_password") }
+                // Quên mật khẩu / Đăng nhập / Face ID / Vân tay / Tạo tài khoản mới.
+                Hit(w, h, 0.70f, 0.532f, 0.92f, 0.558f) { onNavigate("forgot_password") }
+                Hit(w, h, 0.09f, 0.560f, 0.91f, 0.605f, onLogin)
+                Hit(w, h, 0.09f, 0.610f, 0.49f, 0.646f) { onQuickLogin("Face ID") }
+                Hit(w, h, 0.51f, 0.610f, 0.91f, 0.646f) { onQuickLogin("vân tay") }
+                Hit(w, h, 0.31f, 0.646f, 0.75f, 0.675f) { onNavigate("register") }
             }
             "register" -> {
-                Hit(w, h, 0.08f, 0.343f, 0.92f, 0.372f) { onNavigate("home_dashboard") }
-                Hit(w, h, 0.08f, 0.385f, 0.92f, 0.414f) { onNavigate("login") }
+                Hit(w, h, 0.09f, 0.515f, 0.91f, 0.558f, onRegister)
+                Hit(w, h, 0.09f, 0.560f, 0.91f, 0.592f) { onNavigate("login") }
             }
             "forgot_password" -> {
-                Hit(w, h, 0.08f, 0.337f, 0.92f, 0.370f) { onNavigate("login") }
+                Hit(w, h, 0.09f, 0.448f, 0.91f, 0.492f, onForgotSubmit)
             }
             "home_dashboard" -> {
                 Hit(w, h, 0.09f, 0.225f, 0.38f, 0.265f) { onNavigate("lock_detail") }
@@ -262,6 +367,235 @@ private fun Ui31Hotspots(
             }
         }
     }
+}
+
+
+@Composable
+private fun FakeStatusBarMask() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(30.dp)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color(0xFF05060A), Color(0xFF170009), Color(0xFF350014))
+                )
+            )
+    )
+}
+
+@Composable
+private fun AuthNativeLayer(
+    route: String,
+    loginAccount: String,
+    onLoginAccountChange: (String) -> Unit,
+    loginPassword: String,
+    onLoginPasswordChange: (String) -> Unit,
+    registerName: String,
+    onRegisterNameChange: (String) -> Unit,
+    registerPhone: String,
+    onRegisterPhoneChange: (String) -> Unit,
+    registerEmail: String,
+    onRegisterEmailChange: (String) -> Unit,
+    registerPassword: String,
+    onRegisterPasswordChange: (String) -> Unit,
+    registerOtp: String,
+    onRegisterOtpChange: (String) -> Unit,
+    forgotAccount: String,
+    onForgotAccountChange: (String) -> Unit,
+    forgotOtp: String,
+    onForgotOtpChange: (String) -> Unit,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val w = maxWidth
+        val h = maxHeight
+        when (route) {
+            "login" -> {
+                // Ô nhập được dựng lại thành native input đẹp: dòng label nhỏ ở trên,
+                // dòng giá trị nhập thật ở dưới. Không còn dán chữ đè thô lên placeholder ảnh.
+                AuthField(
+                    maxW = w,
+                    maxH = h,
+                    left = 0.095f,
+                    top = 0.418f,
+                    right = 0.905f,
+                    bottom = 0.463f,
+                    label = "Email / Số điện thoại",
+                    value = loginAccount,
+                    onValueChange = onLoginAccountChange,
+                    keyboardType = KeyboardType.Email,
+                    iconRes = R.drawable.ic_flaticon_phone,
+                )
+                AuthField(
+                    maxW = w,
+                    maxH = h,
+                    left = 0.095f,
+                    top = 0.478f,
+                    right = 0.905f,
+                    bottom = 0.524f,
+                    label = "Mật khẩu",
+                    value = loginPassword,
+                    onValueChange = onLoginPasswordChange,
+                    keyboardType = KeyboardType.Password,
+                    password = false, // giữ 123456 nhìn thấy để build test bấm đăng nhập nhanh
+                    iconRes = R.drawable.ic_flaticon_lock,
+                )
+            }
+            "register" -> {
+                AuthField(w, h, 0.095f, 0.210f, 0.905f, 0.253f, "Tên công ty / người dùng", registerName, onRegisterNameChange, KeyboardType.Text, iconRes = R.drawable.ic_flaticon_admin)
+                AuthField(w, h, 0.095f, 0.270f, 0.905f, 0.313f, "Số điện thoại", registerPhone, onRegisterPhoneChange, KeyboardType.Phone, iconRes = R.drawable.ic_flaticon_phone)
+                AuthField(w, h, 0.095f, 0.330f, 0.905f, 0.373f, "Email", registerEmail, onRegisterEmailChange, KeyboardType.Email, iconRes = R.drawable.ic_flaticon_phone)
+                AuthField(w, h, 0.095f, 0.390f, 0.905f, 0.433f, "Mật khẩu", registerPassword, onRegisterPasswordChange, KeyboardType.Password, password = true, iconRes = R.drawable.ic_flaticon_lock)
+                AuthField(w, h, 0.095f, 0.450f, 0.905f, 0.493f, "Mã xác thực", registerOtp, onRegisterOtpChange, KeyboardType.Number, iconRes = R.drawable.ic_flaticon_password)
+            }
+            "forgot_password" -> {
+                AuthField(w, h, 0.095f, 0.328f, 0.905f, 0.372f, "Email / Số điện thoại", forgotAccount, onForgotAccountChange, KeyboardType.Email, iconRes = R.drawable.ic_flaticon_phone)
+                AuthField(w, h, 0.095f, 0.388f, 0.905f, 0.432f, "Mã xác thực", forgotOtp, onForgotOtpChange, KeyboardType.Number, iconRes = R.drawable.ic_flaticon_password)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthField(
+    maxW: Dp,
+    maxH: Dp,
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    keyboardType: KeyboardType,
+    password: Boolean = false,
+    @DrawableRes iconRes: Int? = null,
+) {
+    val shape = RoundedCornerShape(18.dp)
+    Box(
+        modifier = Modifier
+            .offset(x = maxW * left, y = maxH * top)
+            .size(width = maxW * (right - left), height = maxH * (bottom - top))
+            // Che toàn bộ ô trắng trong ảnh gốc bằng ô nhập native màu xám/đen,
+            // chữ trắng, bo góc và có viền để nhìn giống component app thật.
+            .background(Color(0xFF2A2F3A), shape)
+            .border(width = 1.dp, color = Color(0xFF525A68), shape = shape)
+            .padding(start = 18.dp, end = 18.dp, top = 6.dp, bottom = 6.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (iconRes != null) {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    tint = Color(0xFFE8ECF5),
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(14.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    color = Color(0xFFB7BECC),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 16.sp,
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                    visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
+                    cursorBrush = Brush.verticalGradient(listOf(Color(0xFFF20D32), Color(0xFFF20D32))),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+private fun authenticateBiometricLogin(
+    context: Context,
+    methodName: String,
+    onSuccess: () -> Unit,
+    onFallback: () -> Unit,
+) {
+    val activity = context.findFragmentActivity()
+    if (activity == null) {
+        onFallback()
+        return
+    }
+
+    val biometricManager = BiometricManager.from(context)
+    val canUseBiometric = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+    if (canUseBiometric != BiometricManager.BIOMETRIC_SUCCESS) {
+        Toast.makeText(context, "Thiết bị chưa sẵn sàng $methodName", Toast.LENGTH_SHORT).show()
+        onFallback()
+        return
+    }
+
+    val executor = ContextCompat.getMainExecutor(context)
+    val prompt = BiometricPrompt(
+        activity,
+        executor,
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                onSuccess()
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                if (errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON && errorCode != BiometricPrompt.ERROR_USER_CANCELED) {
+                    Toast.makeText(context, errString, Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                Toast.makeText(context, "Xác thực không khớp", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+
+    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+        .setTitle("Đăng nhập nhanh Aplus Lock")
+        .setSubtitle("Xác thực bằng $methodName")
+        .setNegativeButtonText("Hủy")
+        .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        .build()
+    prompt.authenticate(promptInfo)
+}
+
+private fun Context.findFragmentActivity(): FragmentActivity? {
+    var current: Context? = this
+    while (current is ContextWrapper) {
+        if (current is FragmentActivity) return current
+        current = current.baseContext
+    }
+    return null
 }
 
 @Composable
