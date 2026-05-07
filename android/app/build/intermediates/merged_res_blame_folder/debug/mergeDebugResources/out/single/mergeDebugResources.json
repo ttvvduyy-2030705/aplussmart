@@ -1,0 +1,234 @@
+[
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_16_more_hub.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_16_more_hub.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_08_add_fingerprint.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_08_add_fingerprint.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_phone.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_phone.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_22_nfc_unlocking.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_22_nfc_unlocking.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_05_add_key_menu.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_05_add_key_menu.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_29_apartment_hotel_pms.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_29_apartment_hotel_pms.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_nfc.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_nfc.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_transfer.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_transfer.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_admin.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_admin.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_password.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_password.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_schedule.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_schedule.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_records.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_records.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_30_profile_language.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_30_profile_language.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_09_add_face.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_09_add_face.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_01_register.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_01_register.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_06_add_password.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_06_add_password.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_10_add_card.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_10_add_card.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_23_room_management.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_23_room_management.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_lock.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_lock.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_20_combination_unlock.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_20_combination_unlock.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_battery.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_battery.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_analytics.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_analytics.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_24_staff_tenant_management.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_24_staff_tenant_management.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_26_networking_gateway.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_26_networking_gateway.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_alarm.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_alarm.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_settings.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_fingerprint.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_fingerprint.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_language.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_language.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_hotel.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_hotel.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_17_unlock_records.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_17_unlock_records.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_12_phone_authorization.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_12_phone_authorization.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_face.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_face.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_13_sub_admin.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_13_sub_admin.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_03_home_dashboard.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_03_home_dashboard.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_27_device_management.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_27_device_management.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_room.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_room.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_02_forgot_password.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_02_forgot_password.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_07_password_management.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_07_password_management.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_remote.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_remote.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_18_electricity_reporting.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_18_electricity_reporting.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_11_add_remote_control.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_11_add_remote_control.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_00_login.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_00_login.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_15_settings.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_15_settings.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_gateway.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_gateway.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_device.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_device.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_04_lock_detail.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_04_lock_detail.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_21_cycle_normally_open.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_21_cycle_normally_open.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_28_report_analytics.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_28_report_analytics.png"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_14_remote_unlock.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_14_remote_unlock.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_home.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_unlock.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_unlock.xml"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_combination.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_combination.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_19_lock_transfer.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_19_lock_transfer.png"
+    },
+    {
+        "merged": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-debug-48:\\drawable_ic_flaticon_card.xml.flat",
+        "source": "C:\\Users\\mrd07\\.gradle\\daemon\\9.0.0\\com.aplus.locknative.app-main-50:\\drawable\\ic_flaticon_card.xml"
+    },
+    {
+        "merged": "com.aplus.locknative.app-debug-48:/drawable-nodpi_screen_25_alarm_center.png.flat",
+        "source": "com.aplus.locknative.app-main-50:/drawable-nodpi/screen_25_alarm_center.png"
+    }
+]
