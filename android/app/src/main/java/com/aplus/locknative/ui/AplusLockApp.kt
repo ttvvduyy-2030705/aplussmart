@@ -512,7 +512,7 @@ private fun AuthField(
                     singleLine = true,
                     textStyle = TextStyle(
                         color = Color.White,
-                        fontSize = 14.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 16.sp,
                     ),
