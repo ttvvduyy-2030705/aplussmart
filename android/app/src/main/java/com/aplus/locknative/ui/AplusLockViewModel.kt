@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aplus.locknative.domain.*
 import com.aplus.locknative.sdk.AplusSdkProvider
+import com.aplus.locknative.ui.foundation.AppRoute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AplusUiState(
-    val route: String = "login",
+    val route: String = AppRoute.Login,
     val loggedIn: Boolean = false,
     val loading: Boolean = false,
     val toast: String? = null,
@@ -48,19 +49,19 @@ class AplusLockViewModel : ViewModel() {
     }
 
     fun login(email: String, password: String) {
-        _state.update { it.copy(loggedIn = true, route = "home_dashboard", toast = "Đăng nhập thành công") }
+        _state.update { it.copy(loggedIn = true, route = AppRoute.Home, toast = "Đăng nhập thành công") }
         refreshAll()
     }
 
     fun navigate(route: String) {
         _state.update { it.copy(route = route, toast = null) }
-        if (route in listOf("lock_detail", "password_management", "unlock_records")) refreshSelectedLock()
+        if (route in listOf(AppRoute.LockDetail, AppRoute.PasswordManagement, AppRoute.UnlockRecords)) refreshSelectedLock()
     }
 
-    fun backHome() = navigate("home_dashboard")
+    fun backHome() = navigate(AppRoute.Home)
 
     fun selectLock(lockId: String) {
-        _state.update { it.copy(selectedLockId = lockId, route = "lock_detail") }
+        _state.update { it.copy(selectedLockId = lockId, route = AppRoute.LockDetail) }
         refreshSelectedLock()
     }
 

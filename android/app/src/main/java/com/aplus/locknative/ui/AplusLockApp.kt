@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -79,6 +80,9 @@ fun AplusLockApp() {
                 "14:36 • Pin báo 88%"
             )
         }
+        var selectedLockId by rememberSaveable { mutableStateOf("apt520") }
+        var homeFilter by rememberSaveable { mutableStateOf(HomeFilter.ALL) }
+        val selectedLock = demoHomeLocks.firstOrNull { it.id == selectedLockId } ?: demoHomeLocks.first()
 
         // Account test được ghim sẵn để mỗi lần build test chỉ cần bấm Đăng nhập.
         var loginAccount by rememberSaveable { mutableStateOf("admin@aplus.vn") }
@@ -98,6 +102,13 @@ fun AplusLockApp() {
         fun go(next: String) {
             route = next
             if (keyRoutes.contains(next)) lastKeyRoute = next
+        }
+
+        fun openLock(lockId: String) {
+            val target = demoHomeLocks.firstOrNull { it.id == lockId } ?: return
+            selectedLockId = target.id
+            lastKeyRoute = "lock_detail"
+            go("lock_detail")
         }
 
         fun loginNow(message: String = "Đăng nhập thành công") {
@@ -120,8 +131,8 @@ fun AplusLockApp() {
                 "sub_admin" -> "Đã tạo admin phụ mock"
                 "remote_unlock" -> {
                     isLocked = false
-                    logs.add(0, "Vừa xong • Mở khóa từ xa qua backend mock")
-                    "Đã gửi lệnh mở khóa từ xa"
+                    logs.add(0, "Vừa xong • Mở khóa từ xa ${selectedLock.name} qua backend mock")
+                    "Đã gửi lệnh mở khóa từ xa ${selectedLock.name}"
                 }
                 "lock_transfer" -> "Đã tạo yêu cầu chuyển quyền khóa"
                 "combination_unlock" -> "Đã lưu rule mở khóa kết hợp"
@@ -173,10 +184,18 @@ fun AplusLockApp() {
                     forgotOtp = forgotOtp,
                     onForgotOtpChange = { forgotOtp = it },
                 )
+                DynamicHomeLockLayer(
+                    route = spec.route,
+                    selectedLock = selectedLock,
+                    homeFilter = homeFilter,
+                )
                 Ui31Hotspots(
                     route = spec.route,
                     locked = isLocked,
+                    homeFilter = homeFilter,
                     onNavigate = ::go,
+                    onSelectLock = ::openLock,
+                    onSetHomeFilter = { filter -> homeFilter = filter },
                     onLogin = { loginNow() },
                     onRegister = {
                         if (registerName.isBlank() || registerPhone.isBlank() || registerEmail.isBlank() || registerPassword.isBlank()) {
@@ -232,7 +251,10 @@ fun AplusLockApp() {
 private fun Ui31Hotspots(
     route: String,
     locked: Boolean,
+    homeFilter: String,
     onNavigate: (String) -> Unit,
+    onSelectLock: (String) -> Unit,
+    onSetHomeFilter: (String) -> Unit,
     onLogin: () -> Unit,
     onRegister: () -> Unit,
     onForgotSubmit: () -> Unit,
@@ -278,11 +300,20 @@ private fun Ui31Hotspots(
                 Hit(w, h, 0.09f, 0.448f, 0.91f, 0.492f, onForgotSubmit)
             }
             "home_dashboard" -> {
+                // Cụm filter giữ nguyên như ảnh gốc: chỉ đặt hotspot trong suốt lên trên.
+                Hit(w, h, 0.05f, 0.318f, 0.20f, 0.348f) { onSetHomeFilter(HomeFilter.ALL) }
+                Hit(w, h, 0.21f, 0.318f, 0.36f, 0.348f) { onSetHomeFilter(HomeFilter.HOME) }
+                Hit(w, h, 0.37f, 0.318f, 0.57f, 0.348f) { onSetHomeFilter(HomeFilter.HOTEL) }
+                Hit(w, h, 0.58f, 0.318f, 0.76f, 0.348f) { onSetHomeFilter(HomeFilter.OFFICE) }
+
                 Hit(w, h, 0.09f, 0.225f, 0.38f, 0.265f) { onNavigate("lock_detail") }
                 Hit(w, h, 0.78f, 0.365f, 0.95f, 0.395f) { onNavigate("networking_gateway") }
-                Hit(w, h, 0.05f, 0.392f, 0.95f, 0.462f) { onNavigate("lock_detail") }
-                Hit(w, h, 0.05f, 0.475f, 0.95f, 0.545f) { onNavigate("lock_detail") }
-                Hit(w, h, 0.05f, 0.558f, 0.95f, 0.628f) { onNavigate("lock_detail") }
+
+                val visibleLocks = visibleLocksForFilter(homeFilter)
+                visibleLocks.forEachIndexed { index, lock ->
+                    val top = listOf(0.392f, 0.475f, 0.558f).getOrElse(index) { 0.392f }
+                    Hit(w, h, 0.05f, top, 0.95f, top + 0.070f) { onSelectLock(lock.id) }
+                }
                 // Quick actions grid.
                 Hit(w, h, 0.05f, 0.668f, 0.34f, 0.728f) { onNavigate("add_key_menu") }
                 Hit(w, h, 0.36f, 0.668f, 0.65f, 0.728f) { onNavigate("add_fingerprint") }
@@ -369,6 +400,123 @@ private fun Ui31Hotspots(
     }
 }
 
+
+
+@Composable
+private fun DynamicHomeLockLayer(
+    route: String,
+    selectedLock: DemoHomeLock,
+    homeFilter: String,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val w = maxWidth
+        val h = maxHeight
+        when (route) {
+            "home_dashboard" -> FilteredHomeListOverlay(w, h, homeFilter)
+            "lock_detail" -> SelectedLockNameOverlay(w, h, selectedLock)
+        }
+    }
+}
+
+@Composable
+private fun FilteredHomeListOverlay(maxW: Dp, maxH: Dp, homeFilter: String) {
+    // Tất cả: giữ nguyên 100% màn home gốc trong ảnh, không vẽ thêm gì lên danh sách.
+    if (homeFilter == HomeFilter.ALL) return
+
+    val visibleLocks = visibleLocksForFilter(homeFilter)
+    val targetRows = listOf(0.392f, 0.475f, 0.558f)
+
+    // Khi lọc, KHÔNG tự vẽ lại card bằng Compose vì sẽ lệch UI so với tab Tất cả.
+    // Cách làm chuẩn ở đây là:
+    // 1) Che đúng vùng danh sách 3 khóa gốc.
+    // 2) Cắt lại chính từng row card từ ảnh home gốc screen_03_home_dashboard.
+    // Vì row được lấy từ ảnh gốc nên khi lọc Nhà / Khách sạn / Văn phòng, UI card vẫn giống hệt bên Tất cả.
+    Box(
+        modifier = Modifier
+            .offset(x = maxW * 0.035f, y = maxH * 0.382f)
+            .size(width = maxW * 0.93f, height = maxH * 0.255f)
+            .background(Color(0xFF080B12))
+    )
+
+    visibleLocks.take(targetRows.size).forEachIndexed { index, lock ->
+        val sourceIndex = demoHomeLocks.indexOfFirst { it.id == lock.id }.coerceAtLeast(0)
+        val sourceTop = targetRows[sourceIndex]
+        val targetTop = targetRows[index]
+        HomeOriginalLockRowSlice(
+            maxW = maxW,
+            maxH = maxH,
+            sourceTop = sourceTop,
+            targetTop = targetTop
+        )
+    }
+}
+
+@Composable
+private fun HomeOriginalLockRowSlice(
+    maxW: Dp,
+    maxH: Dp,
+    sourceTop: Float,
+    targetTop: Float,
+) {
+    // Chiều cao lấy rộng hơn hotspot một chút để giữ nguyên bo góc, khoảng trắng và shadow của row trong ảnh gốc.
+    val sliceHeight = 0.078f
+    Box(
+        modifier = Modifier
+            .offset(x = 0.dp, y = maxH * targetTop)
+            .size(width = maxW, height = maxH * sliceHeight)
+            .clipToBounds()
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.screen_03_home_dashboard),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier
+                .offset(x = 0.dp, y = maxH * -sourceTop)
+                .size(width = maxW, height = maxH)
+        )
+    }
+}
+
+@Composable
+private fun SelectedLockNameOverlay(maxW: Dp, maxH: Dp, lock: DemoHomeLock) {
+    // Ảnh lock_detail gốc đang in cứng Căn hộ 520; lớp nhỏ này chỉ thay vùng tên khóa động.
+    Box(
+        modifier = Modifier
+            .offset(x = maxW * 0.18f, y = maxH * 0.050f)
+            .size(width = maxW * 0.64f, height = maxH * 0.056f)
+            .background(Color(0xEE25000F)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = lock.name,
+                color = Color(0xFFFFF4F7),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = lock.detailLine,
+                color = Color(0xFFCAB2BC),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+private fun visibleLocksForFilter(homeFilter: String): List<DemoHomeLock> {
+    return if (homeFilter == HomeFilter.ALL) {
+        demoHomeLocks
+    } else {
+        demoHomeLocks.filter { it.category == homeFilter }
+    }
+}
 
 @Composable
 private fun FakeStatusBarMask() {
@@ -627,6 +775,50 @@ data class Ui31Screen(
     val route: String,
     val title: String,
     @DrawableRes val imageRes: Int,
+)
+
+
+private object HomeFilter {
+    const val ALL = "all"
+    const val HOME = "home"
+    const val HOTEL = "hotel"
+    const val OFFICE = "office"
+}
+
+private data class DemoHomeLock(
+    val id: String,
+    val name: String,
+    val category: String,
+    val homeLine: String,
+    val detailLine: String,
+    val shortLabel: String,
+)
+
+private val demoHomeLocks = listOf(
+    DemoHomeLock(
+        id = "apt520",
+        name = "Căn hộ 520",
+        category = HomeFilter.HOME,
+        homeLine = "Nhà • Online • Khóa chính",
+        detailLine = "Online • Đã khóa • Nhà",
+        shortLabel = "N",
+    ),
+    DemoHomeLock(
+        id = "room301",
+        name = "Phòng 301",
+        category = HomeFilter.HOTEL,
+        homeLine = "Khách sạn • Online • Phòng khách",
+        detailLine = "Online • Đã khóa • Khách sạn",
+        shortLabel = "KS",
+    ),
+    DemoHomeLock(
+        id = "backgate",
+        name = "Cổng sau",
+        category = HomeFilter.OFFICE,
+        homeLine = "Văn phòng • Gateway • Remote",
+        detailLine = "Gateway • Đã khóa • Văn phòng",
+        shortLabel = "VP",
+    ),
 )
 
 private val keyRoutes = setOf(
