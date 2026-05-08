@@ -1,11 +1,14 @@
 R_DEF: Internal format may change without notice
 local
 drawable aplus_logo
+drawable ic_battery
+drawable ic_bluetooth
 drawable ic_card
 drawable ic_chevron_left
 drawable ic_combo
 drawable ic_face
 drawable ic_fingerprint
+drawable ic_gateway
 drawable ic_globe
 drawable ic_home
 drawable ic_keypad
@@ -13,6 +16,7 @@ drawable ic_lock
 drawable ic_more
 drawable ic_nfc
 drawable ic_phone
+drawable ic_qr
 drawable ic_remote
 drawable ic_report
 drawable ic_shield

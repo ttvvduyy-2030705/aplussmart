@@ -70,3 +70,24 @@ Gợi ý map:
 - `ic_shield.xml` -> policy / security icon
 
 Không đổi tên drawable để tránh lỗi resource ID trong Kotlin.
+
+## Update UX - chọn nút và lịch ngày
+- Các lựa chọn dạng button trong UI-26 như loại mã, role/quyền ở các form liên quan sẽ chuyển sang nền đỏ khi đang được chọn.
+- Filter rủi ro và bottom tab cũng hiển thị trạng thái chọn rõ bằng màu đỏ.
+- Trường `Hiệu lực từ` và `Hiệu lực đến` trong UI-26 không nhập tay nữa; bấm vào trường sẽ mở DatePicker dạng khung lịch, chọn ngày rồi tự điền định dạng `dd/MM/yyyy`.
+
+## Cập nhật UX ngày giờ hiệu lực
+
+- Trường `Hiệu lực từ` và `Hiệu lực đến` dùng định dạng mặc định `dd/MM/yyyy HH:mm`.
+- Khi mở màn Thêm mật khẩu, app tự đặt `Hiệu lực từ` là thời điểm hiện tại và `Hiệu lực đến` là 12 giờ sau.
+- Bấm vào từng trường sẽ mở lịch chọn ngày, kèm ô nhập Giờ và Phút để tránh phải nhập tay toàn bộ chuỗi thời gian.
+- Không cho tạo mã nếu `Hiệu lực từ` nằm trong quá khứ, `Hiệu lực đến` nằm trong quá khứ, hoặc `Hiệu lực đến` không sau `Hiệu lực từ`.
+- Validation này áp dụng cả mã thường, mã tạm thời, mã một lần, mã chu kỳ và mã nhân viên/khách.
+
+
+## Cập nhật UX hiệu lực mã chu kỳ
+
+- Với mã thường, mã tạm thời, mã một lần và mã nhân viên/khách: `Hiệu lực từ` và `Hiệu lực đến` đều dùng ngày + giờ theo định dạng `dd/MM/yyyy HH:mm`.
+- Với mã chu kỳ: `Hiệu lực từ` vẫn chọn ngày + giờ bắt đầu, nhưng `Hiệu lực đến` chỉ chọn ngày kết thúc (`dd/MM/yyyy`).
+- Giờ sử dụng của mã chu kỳ nằm trong ô `Lịch lặp / ngày trong tuần + giờ`, ví dụ `T2/T4/T6 • 09:00-12:00`, nên không nhập giờ lặp lại ở `Hiệu lực đến`.
+- Validation chặn ngày/thời gian trong quá khứ và chặn thời hạn kết thúc không sau thời điểm bắt đầu.

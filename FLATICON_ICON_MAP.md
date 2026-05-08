@@ -38,3 +38,16 @@ Các drawable đang dùng trong Password Management:
 | `ic_shield.xml` | chính sách bảo mật | `security shield`, `policy`, `access control` |
 
 Khi tải SVG từ Flaticon, nên import bằng Android Studio: `New > Vector Asset > Local file (SVG)` rồi lưu đè đúng tên drawable ở trên.
+
+## Batch 12 - Pairing / Gateway / Networking
+
+Các icon mới đã tách thành vector drawable build-safe. Khi tải từ Flaticon, thay cùng tên file để không phải sửa code:
+
+- `ic_qr.xml` -> QR code / scan code icon
+- `ic_bluetooth.xml` -> Bluetooth icon
+- `ic_gateway.xml` -> router / gateway / hub icon
+- `ic_wifi.xml` -> Wi-Fi icon
+- `ic_keypad.xml` -> device code / manual code icon
+- `ic_more.xml` -> manual demo / more method icon
+
+Nguồn icon theo yêu cầu: https://www.flaticon.com/

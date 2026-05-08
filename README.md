@@ -59,3 +59,8 @@ Xem thêm: `BATCH4_CREDENTIAL_GUIDE.md` và `FLATICON_ICON_MAP.md`.
 ## Batch 05
 
 Bản này đã thêm Password Management theo UI-03 và UI-26. Xem `BATCH5_PASSWORD_GUIDE.md` để test mã thường, mã tạm thời, mã một lần, mã chu kỳ, PendingSync/PendingRevoke và mock password unlock.
+
+
+## Batch 12
+
+Đã thêm UI-12 Kết nối Gateway / Pairing Wizard. Xem `BATCH12_PAIRING_GATEWAY_GUIDE.md`.

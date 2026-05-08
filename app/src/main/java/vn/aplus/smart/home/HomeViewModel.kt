@@ -16,6 +16,7 @@ import vn.aplus.smart.data.AccessMethod
 import vn.aplus.smart.data.CredentialType
 import vn.aplus.smart.data.PermissionRole
 import vn.aplus.smart.data.PasswordType
+import vn.aplus.smart.data.PairingMethod
 import vn.aplus.smart.data.RoomInfo
 
 data class HomeUiState(
@@ -85,9 +86,22 @@ class HomeViewModel : ViewModel() {
     fun addFailedRemoteUnlock(lockId: String, reason: String) { repository.addFailedRecord(lockId, AccessMethod.RemoteApp, reason) }
     val credentials = repository.credentials
     val auditLogs = repository.auditLogs
+    val discoveredDevices = repository.discoveredDevices
+    val gateways = repository.gateways
 
     fun findLock(lockId: String): LockDevice? = repository.findLock(lockId)
     fun capabilityFor(lockId: String) = repository.capabilityFor(lockId)
+
+    fun addPairedLock(
+        method: PairingMethod,
+        serial: String,
+        model: String,
+        lockName: String,
+        roomId: String,
+        wifiSsid: String,
+        wifiPassword: String,
+        gatewayId: String?
+    ): Pair<Boolean, String> = repository.addPairedLock(method, serial, model, lockName, roomId, wifiSsid, wifiPassword, gatewayId)
     fun addCredential(
         lockId: String,
         type: CredentialType,

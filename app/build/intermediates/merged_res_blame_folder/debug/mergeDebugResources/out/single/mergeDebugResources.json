@@ -20,8 +20,20 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\mipmap-hdpi\\ic_launcher_round.png"
     },
     {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_card.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_card.xml"
+    },
+    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_globe.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_globe.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_more.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_more.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_gateway.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_gateway.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_wifi.xml.flat",
@@ -36,24 +48,16 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\mipmap-mdpi\\ic_launcher.png"
     },
     {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_combo.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_combo.xml"
+    },
+    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_user.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_user.xml"
     },
     {
-        "merged": "vn.aplus.smart.app-debug-56:/drawable_ic_more.xml.flat",
-        "source": "vn.aplus.smart.app-main-58:/drawable/ic_more.xml"
-    },
-    {
-        "merged": "vn.aplus.smart.app-debug-56:/drawable_ic_combo.xml.flat",
-        "source": "vn.aplus.smart.app-main-58:/drawable/ic_combo.xml"
-    },
-    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_report.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_report.xml"
-    },
-    {
-        "merged": "vn.aplus.smart.app-debug-56:/drawable_ic_nfc.xml.flat",
-        "source": "vn.aplus.smart.app-main-58:/drawable/ic_nfc.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\mipmap-xhdpi_ic_launcher.png.flat",
@@ -68,8 +72,16 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_home.xml"
     },
     {
-        "merged": "vn.aplus.smart.app-debug-56:/drawable_ic_card.xml.flat",
-        "source": "vn.aplus.smart.app-main-58:/drawable/ic_card.xml"
+        "merged": "vn.aplus.smart.app-debug-56:/drawable_ic_battery.xml.flat",
+        "source": "vn.aplus.smart.app-main-58:/drawable/ic_battery.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_bluetooth.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_bluetooth.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_remote.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_remote.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_shield.xml.flat",
@@ -96,6 +108,10 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_face.xml"
     },
     {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_qr.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_qr.xml"
+    },
+    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_phone.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_phone.xml"
     },
@@ -108,15 +124,15 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_lock.xml"
     },
     {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\drawable_ic_nfc.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\drawable\\ic_nfc.xml"
+    },
+    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\mipmap-hdpi_ic_launcher.png.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\mipmap-hdpi\\ic_launcher.png"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-debug-56:\\mipmap-mdpi_ic_launcher_round.png.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\9.0.0\\vn.aplus.smart.app-main-58:\\mipmap-mdpi\\ic_launcher_round.png"
-    },
-    {
-        "merged": "vn.aplus.smart.app-debug-56:/drawable_ic_remote.xml.flat",
-        "source": "vn.aplus.smart.app-main-58:/drawable/ic_remote.xml"
     }
 ]

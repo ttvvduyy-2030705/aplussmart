@@ -3,6 +3,9 @@ package vn.aplus.smart.data
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 enum class BuildingType(val label: String) {
     All("Tất cả"),
@@ -229,6 +232,34 @@ data class CommandLog(
     val createdAt: String
 )
 
+enum class PairingMethod(val label: String, val shortLabel: String) {
+    QrCode("QR code", "QR"),
+    DeviceCode("Mã thiết bị", "CODE"),
+    Bluetooth("Bluetooth nearby", "BLE"),
+    Wifi("Wi-Fi setup", "WIFI"),
+    GatewayMqtt("Gateway/MQTT", "GW"),
+    ManualDemo("Nhập thủ công", "DEMO")
+}
+
+data class DiscoveredDevice(
+    val serial: String,
+    val model: String,
+    val type: String,
+    val rssi: Int,
+    val capabilities: List<String>,
+    val alreadyBound: Boolean = false,
+    val recommendedMethod: PairingMethod = PairingMethod.Bluetooth
+)
+
+data class GatewayInfo(
+    val id: String,
+    val name: String,
+    val online: Boolean,
+    val signal: Int,
+    val lockIds: List<String>,
+    val firmwareVersion: String
+)
+
 object MockLockRepository {
     val homes = listOf(
         HomeInfo("home-apartment", "Aplus Home", BuildingType.Home, "Căn hộ mẫu Aplus"),
@@ -415,6 +446,51 @@ object MockLockRepository {
     private val _auditLogs = MutableStateFlow<List<AuditLog>>(emptyList())
     val auditLogs = _auditLogs.asStateFlow()
 
+    val discoveredDevices = listOf(
+        DiscoveredDevice(
+            serial = "APL-NEW-8842",
+            model = "Aplus L520 Pro",
+            type = "Khóa căn hộ",
+            rssi = -48,
+            capabilities = listOf("password", "fingerprint", "card", "remote", "gateway"),
+            alreadyBound = false,
+            recommendedMethod = PairingMethod.Bluetooth
+        ),
+        DiscoveredDevice(
+            serial = "APL-HOTEL-0908",
+            model = "Aplus Hotel H3",
+            type = "Khóa khách sạn",
+            rssi = -63,
+            capabilities = listOf("password", "card", "gateway", "offline card"),
+            alreadyBound = false,
+            recommendedMethod = PairingMethod.GatewayMqtt
+        ),
+        DiscoveredDevice(
+            serial = "APL-GATE-0099",
+            model = "Aplus Gate G1",
+            type = "Khóa cổng",
+            rssi = -71,
+            capabilities = listOf("remote", "nfc", "gateway"),
+            alreadyBound = false,
+            recommendedMethod = PairingMethod.Wifi
+        ),
+        DiscoveredDevice(
+            serial = "APL-520-0001",
+            model = "Aplus L520 Pro",
+            type = "Đã bind",
+            rssi = -55,
+            capabilities = listOf("password", "fingerprint", "card"),
+            alreadyBound = true,
+            recommendedMethod = PairingMethod.QrCode
+        )
+    )
+
+    val gateways = listOf(
+        GatewayInfo("gw-main", "Gateway Aplus chính", online = true, signal = 4, lockIds = listOf("lock-520", "lock-showroom"), firmwareVersion = "2.1.0"),
+        GatewayInfo("gw-hotel", "Gateway khách sạn tầng 3", online = false, signal = 1, lockIds = listOf("lock-301"), firmwareVersion = "2.0.4"),
+        GatewayInfo("gw-office", "Gateway văn phòng", online = true, signal = 3, lockIds = listOf("lock-back-gate"), firmwareVersion = "2.1.1")
+    )
+
     private val capabilities = mapOf(
         "lock-520" to LockCapability("lock-520", supportsFingerprint = true, supportsFace = true, supportsCard = true, supportsNfc = true, supportsRemote = true),
         "lock-301" to LockCapability("lock-301", supportsFingerprint = true, supportsFace = false, supportsCard = true, supportsNfc = false, supportsRemote = false),
@@ -486,6 +562,29 @@ object MockLockRepository {
 
     private fun fakePasswordHash(code: String): String = "mockhash-${code.reversed()}-${code.length}"
 
+    private fun parseCredentialDateTime(value: String): Long? {
+        return runCatching {
+            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("vi", "VN")).apply { isLenient = false }.parse(value)?.time
+        }.getOrNull()
+    }
+
+    private fun validateCredentialTimeRange(validFrom: String, validTo: String): String? {
+        val fromMillis = parseCredentialDateTime(validFrom) ?: return "Ngày hiệu lực từ phải theo dạng dd/MM/yyyy HH:mm."
+        val toMillis = parseCredentialDateTime(validTo) ?: return "Ngày hiệu lực đến phải theo dạng dd/MM/yyyy HH:mm."
+        val now = System.currentTimeMillis()
+        if (fromMillis < now - 60_000L) return "Hiệu lực từ không được là thời điểm trong quá khứ."
+        if (toMillis <= now) return "Hiệu lực đến không được là thời điểm trong quá khứ."
+        if (toMillis <= fromMillis) return "Hiệu lực đến phải sau hiệu lực từ."
+        return null
+    }
+
+    private fun isNowInsideCredentialRange(credential: Credential): Boolean {
+        val fromMillis = parseCredentialDateTime(credential.validFrom) ?: return true
+        val toMillis = parseCredentialDateTime(credential.validTo) ?: return true
+        val now = System.currentTimeMillis()
+        return now in fromMillis..toMillis
+    }
+
     private fun isCredentialUsable(status: CredentialStatus): Boolean = status == CredentialStatus.Active || status == CredentialStatus.Pending
 
     fun createPasswordCredential(
@@ -507,7 +606,7 @@ object MockLockRepository {
         if (code.length !in policy.minLength..policy.maxLength) return false to "Mã phải có 6-10 số."
         if (policy.numericOnly && code.any { !it.isDigit() }) return false to "Mã chỉ được chứa chữ số."
         if (validFrom.isBlank() || validTo.isBlank()) return false to "Cần nhập thời gian bắt đầu và kết thúc."
-        if (validTo.contains("trước", ignoreCase = true)) return false to "Thời gian kết thúc không hợp lệ."
+        validateCredentialTimeRange(validFrom, validTo)?.let { return false to it }
         val codeHash = fakePasswordHash(code)
         val duplicatedCode = _credentials.value.any { credential ->
             credential.type == CredentialType.Password &&
@@ -578,6 +677,7 @@ object MockLockRepository {
         }
         if (!isCredentialUsable(credential.status)) return fail("Mã không còn hiệu lực: ${credential.status.label}.")
         if (credential.syncState != SyncState.Synced) return fail("Mã chưa đồng bộ xuống khóa: ${credential.syncState.label}.")
+        if (!isNowInsideCredentialRange(credential)) return fail("Mã nằm ngoài thời gian hiệu lực.")
         if (!lock.online) return fail("Khóa offline, không xác nhận được mã.")
         if (credential.passwordType == PasswordType.OneTime && credential.usedCount >= 1) return fail("Mã một lần đã được sử dụng.")
         if (credential.passwordType == PasswordType.Cycle && credential.scheduleRule?.contains("Ngoài giờ", ignoreCase = true) == true) return fail("Mã chu kỳ đang ngoài khung giờ cho phép.")
@@ -695,6 +795,83 @@ object MockLockRepository {
         CredentialType.PhoneNfc -> AccessMethod.PhoneNfc
         CredentialType.Combination -> AccessMethod.Combination
         CredentialType.Admin -> AccessMethod.App
+    }
+
+    fun addPairedLock(
+        method: PairingMethod,
+        serial: String,
+        model: String,
+        lockName: String,
+        roomId: String,
+        wifiSsid: String,
+        wifiPassword: String,
+        gatewayId: String?
+    ): Pair<Boolean, String> {
+        val cleanSerial = serial.trim().uppercase()
+        val cleanName = lockName.trim()
+        val cleanModel = model.trim().ifBlank { "Aplus Smart Lock" }
+        val room = rooms.firstOrNull { it.id == roomId } ?: return false to "Cần chọn phòng/khu vực hợp lệ."
+        val home = homes.firstOrNull { it.id == room.homeId } ?: return false to "Không tìm thấy nhà/công trình của phòng."
+        val discovered = discoveredDevices.firstOrNull { it.serial.equals(cleanSerial, ignoreCase = true) }
+
+        if (cleanSerial.isBlank()) return false to "Cần nhập serial/mã thiết bị."
+        if (cleanName.isBlank()) return false to "Cần đặt tên khóa."
+        if (_locks.value.any { it.serial.equals(cleanSerial, ignoreCase = true) }) return false to "Serial đã tồn tại trong hệ thống, không tạo khóa trùng."
+        if (discovered?.alreadyBound == true) return false to "Thiết bị đã được bind với owner khác. Cần reset/chuyển quyền trước."
+        if (method == PairingMethod.Wifi && (wifiSsid.isBlank() || wifiPassword.length < 8)) return false to "Wi-Fi setup cần SSID và mật khẩu tối thiểu 8 ký tự."
+        if (method == PairingMethod.GatewayMqtt) {
+            val gateway = gateways.firstOrNull { it.id == gatewayId } ?: return false to "Cần chọn Gateway để gán khóa."
+            if (!gateway.online) return false to "Gateway ${gateway.name} đang offline, không thể pairing."
+        }
+
+        val now = System.currentTimeMillis()
+        val kind = when (home.type) {
+            BuildingType.Hotel -> LockKind.HotelRoom
+            BuildingType.Office -> if (room.id.contains("gate", ignoreCase = true)) LockKind.Gate else LockKind.OfficeDoor
+            else -> LockKind.ApartmentDoor
+        }
+        val lockId = "lock-${cleanSerial.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')}"
+        val newLock = LockDevice(
+            id = lockId,
+            name = cleanName,
+            roomId = room.id,
+            homeId = home.id,
+            room = room.name,
+            homeName = home.name,
+            roomNo = room.roomNo,
+            buildingType = home.type,
+            kind = kind,
+            model = cleanModel,
+            serial = cleanSerial,
+            firmwareVersion = "1.0.0",
+            locked = true,
+            online = true,
+            doorOpen = false,
+            battery = 88,
+            signal = if (method == PairingMethod.Bluetooth) 3 else 4,
+            lastSeen = "Vừa pairing",
+            alertBadges = emptyList(),
+            tenantName = room.currentTenantName
+        )
+        _locks.update { listOf(newLock) + it }
+        _commands.update { logs ->
+            logs + CommandLog("cmd-$now", newLock.id, "PAIR_${method.name.uppercase()}", AccessMethod.App, "SUCCESS", null, "Vừa xong")
+        }
+        _auditLogs.update { logs ->
+            listOf(AuditLog("audit-$now", "user-owner", "PAIR_LOCK_${method.name.uppercase()}", "LockDevice", newLock.id, null, "${newLock.name}/${newLock.serial}", "Vừa xong")) + logs
+        }
+        _records.update { current ->
+            listOf(AccessRecord("rec-$now", newLock.id, newLock.name, "Aplus Owner", AccessMethod.App, "AUDIT", method.shortLabel, "PAIR_LOCK_SUCCESS", "Vừa xong")) + current
+        }
+        val via = when (method) {
+            PairingMethod.QrCode -> "QR"
+            PairingMethod.DeviceCode -> "mã thiết bị"
+            PairingMethod.Bluetooth -> "Bluetooth"
+            PairingMethod.Wifi -> "Wi-Fi ${wifiSsid.ifBlank { "setup" }}"
+            PairingMethod.GatewayMqtt -> gateways.firstOrNull { it.id == gatewayId }?.name ?: "Gateway"
+            PairingMethod.ManualDemo -> "nhập thủ công"
+        }
+        return true to "Đã thêm ${newLock.name} qua $via. Khóa đã xuất hiện ở Home."
     }
 
     fun refreshMock() {

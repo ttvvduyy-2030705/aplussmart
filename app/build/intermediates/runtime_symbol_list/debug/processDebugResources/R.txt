@@ -628,6 +628,8 @@ int drawable btn_radio_on_mtrl 0x7f07005d
 int drawable btn_radio_on_to_off_mtrl_animation 0x7f07005e
 int drawable fingerprint_dialog_error 0x7f07005f
 int drawable fingerprint_dialog_fp_icon 0x7f070060
+int drawable ic_battery 0x7f07008a
+int drawable ic_bluetooth 0x7f070087
 int drawable ic_call_answer 0x7f070061
 int drawable ic_call_answer_low 0x7f070062
 int drawable ic_call_answer_video 0x7f070063
@@ -639,6 +641,7 @@ int drawable ic_chevron_left 0x7f070067
 int drawable ic_combo 0x7f070083
 int drawable ic_face 0x7f070068
 int drawable ic_fingerprint 0x7f070069
+int drawable ic_gateway 0x7f070088
 int drawable ic_globe 0x7f07006a
 int drawable ic_home 0x7f07006b
 int drawable ic_keypad 0x7f07006c
@@ -646,6 +649,7 @@ int drawable ic_lock 0x7f07006d
 int drawable ic_more 0x7f070084
 int drawable ic_nfc 0x7f070085
 int drawable ic_phone 0x7f07006e
+int drawable ic_qr 0x7f070089
 int drawable ic_remote 0x7f070086
 int drawable ic_report 0x7f07006f
 int drawable ic_shield 0x7f070070

@@ -33,6 +33,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -81,11 +85,19 @@ import vn.aplus.smart.data.CredentialStatus
 import vn.aplus.smart.data.CredentialType
 import vn.aplus.smart.data.PermissionRole
 import vn.aplus.smart.data.PasswordType
+import vn.aplus.smart.data.RoomInfo
+import vn.aplus.smart.data.PairingMethod
+import vn.aplus.smart.data.GatewayInfo
+import vn.aplus.smart.data.DiscoveredDevice
 import vn.aplus.smart.data.SyncState
 import vn.aplus.smart.data.LockDevice
 import vn.aplus.smart.data.RiskFilter
 import vn.aplus.smart.home.HomeUiState
 import vn.aplus.smart.home.HomeViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,14 +105,14 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = android.graphics.Color.TRANSPARENT
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
-        setContent { AplusBatch5App() }
+        setContent { AplusBatch12App() }
     }
 }
 
 private enum class AppRoute {
     Login, Register, Forgot, Home, LockDetail, UnlockHub, RemoteUnlock,
     PasswordManager, CardManager, NfcPhoneCard, AddFace, AddRemote, AddCard, AddPassword, AddFingerprint, CombinationUnlock,
-    FeaturePlaceholder, Placeholder
+    PairingGateway, MoreHub, FeaturePlaceholder, Placeholder
 }
 private enum class MainTab(val label: String, val icon: Int) {
     Home("Nhà", R.drawable.ic_home),
@@ -129,7 +141,7 @@ private val lockDetailQuickActions = listOf(
     QuickAction("NFC/Phone", "NFC & thẻ điện thoại", R.drawable.ic_nfc, AppRoute.NfcPhoneCard.name, "UI-15"),
     QuickAction("Sub admin", "Quản trị phụ", R.drawable.ic_user, AppRoute.FeaturePlaceholder.name, "UI-13"),
     QuickAction("Settings", "Cài đặt khóa", R.drawable.ic_globe, AppRoute.FeaturePlaceholder.name, "UI-29"),
-    QuickAction("More", "More Hub", R.drawable.ic_more, AppRoute.FeaturePlaceholder.name, "UI-06")
+    QuickAction("More", "More Hub", R.drawable.ic_more, AppRoute.MoreHub.name, "UI-06")
 )
 
 private val batch4CredentialActions = listOf(
@@ -210,7 +222,7 @@ private object AplusTheme {
 }
 
 @Composable
-private fun AplusBatch5App(
+private fun AplusBatch12App(
     authViewModel: AuthViewModel = viewModel(),
     homeViewModel: HomeViewModel = viewModel()
 ) {
@@ -245,6 +257,8 @@ private fun AuthenticatedApp(
     var selectedTab by rememberSaveable { mutableStateOf(MainTab.Home.name) }
     var selectedLockId by rememberSaveable { mutableStateOf("lock-520") }
     var lastMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var pairingBackRoute by rememberSaveable { mutableStateOf(AppRoute.Home.name) }
+    var featureBackRoute by rememberSaveable { mutableStateOf(AppRoute.UnlockHub.name) }
     var featureTitle by rememberSaveable { mutableStateOf("Màn chức năng") }
     var featureCode by rememberSaveable { mutableStateOf("UI") }
 
@@ -258,10 +272,16 @@ private fun AuthenticatedApp(
         route = AppRoute.Placeholder.name
     }
 
-    fun openFeature(title: String, code: String) {
+    fun openFeature(title: String, code: String, backRoute: AppRoute = AppRoute.UnlockHub) {
+        featureBackRoute = backRoute.name
         featureTitle = title
         featureCode = code
         route = AppRoute.FeaturePlaceholder.name
+    }
+
+    fun openPairing(backRoute: AppRoute = AppRoute.Home) {
+        pairingBackRoute = backRoute.name
+        route = AppRoute.PairingGateway.name
     }
 
     fun handleQuickAction(action: QuickAction) {
@@ -291,7 +311,8 @@ private fun AuthenticatedApp(
                 onSearchChange = homeViewModel::setSearchQuery,
                 onRiskFilterChange = homeViewModel::setRiskFilter,
                 onRefresh = homeViewModel::refresh,
-                onAddLock = { openPlaceholder("Batch 12 sẽ nối Pairing/Gateway; Batch 03 đang giữ route Thêm khóa an toàn.") },
+                onAddLock = { openPairing(AppRoute.Home) },
+                onQuickAccess = { target -> if (target == AppRoute.PairingGateway) openPairing(AppRoute.Home) else route = target.name },
                 onOpenLock = { id -> selectedLockId = id; route = AppRoute.LockDetail.name },
                 selectedTab = MainTab.valueOf(selectedTab),
                 onTab = ::handleMainTab,
@@ -305,7 +326,8 @@ private fun AuthenticatedApp(
             onSearchChange = homeViewModel::setSearchQuery,
             onRiskFilterChange = homeViewModel::setRiskFilter,
             onRefresh = homeViewModel::refresh,
-            onAddLock = { openPlaceholder("Batch 12 sẽ nối Pairing/Gateway; Batch 03 đang giữ route Thêm khóa an toàn.") },
+            onAddLock = { openPairing(AppRoute.Home) },
+            onQuickAccess = { target -> if (target == AppRoute.PairingGateway) openPairing(AppRoute.Home) else route = target.name },
             onOpenLock = { id -> selectedLockId = id; route = AppRoute.LockDetail.name },
             selectedTab = MainTab.valueOf(selectedTab),
             onTab = ::handleMainTab,
@@ -357,7 +379,7 @@ private fun AuthenticatedApp(
                 onRevoke = { id -> lastMessage = homeViewModel.revokeCredential(id).second },
                 onPause = { id -> lastMessage = homeViewModel.pauseCredential(id).second },
                 onResume = { id -> lastMessage = homeViewModel.resumeCredential(id).second },
-                onExtend = { id -> lastMessage = homeViewModel.extendCredential(id, "Gia hạn thêm 7 ngày").second },
+                onExtend = { id -> lastMessage = homeViewModel.extendCredential(id, dateTimePlusHoursForUi(24 * 7)).second },
                 onMockUnlock = { id -> lastMessage = homeViewModel.simulatePasswordUnlock(id).second },
                 selectedTab = MainTab.valueOf(selectedTab),
                 onTab = ::handleMainTab
@@ -507,6 +529,32 @@ private fun AuthenticatedApp(
                 onTab = ::handleMainTab
             )
         }
+        AppRoute.MoreHub -> {
+            MoreHubScreen(
+                onBack = { route = AppRoute.LockDetail.name },
+                onOpenGateway = { openPairing(AppRoute.MoreHub) },
+                onOpenFeature = { title, code -> openFeature(title, code, AppRoute.MoreHub) },
+                onOpenRoute = { target -> route = target.name },
+                selectedTab = MainTab.valueOf(selectedTab),
+                onTab = ::handleMainTab
+            )
+        }
+        AppRoute.PairingGateway -> {
+            PairingGatewayScreen(
+                homes = homeState.homes,
+                rooms = homeState.rooms,
+                discoveredDevices = homeViewModel.discoveredDevices,
+                gateways = homeViewModel.gateways,
+                onBack = { route = pairingBackRoute },
+                onPair = { method, serial, model, lockName, roomId, ssid, password, gatewayId ->
+                    val result = homeViewModel.addPairedLock(method, serial, model, lockName, roomId, ssid, password, gatewayId)
+                    lastMessage = result.second
+                    if (result.first) route = AppRoute.Home.name
+                },
+                selectedTab = MainTab.valueOf(selectedTab),
+                onTab = ::handleMainTab
+            )
+        }
         AppRoute.RemoteUnlock -> {
             val selectedLock = homeState.allLocks.firstOrNull { it.id == selectedLockId } ?: homeViewModel.findLock(selectedLockId)
             if (selectedLock == null) {
@@ -525,7 +573,7 @@ private fun AuthenticatedApp(
         AppRoute.FeaturePlaceholder -> FeaturePlaceholderScreen(
             title = featureTitle,
             uiCode = featureCode,
-            onBack = { route = AppRoute.UnlockHub.name },
+            onBack = { route = featureBackRoute },
             selectedTab = MainTab.valueOf(selectedTab),
             onTab = ::handleMainTab
         )
@@ -819,6 +867,7 @@ private fun HomeDashboardScreen(
     onRiskFilterChange: (RiskFilter) -> Unit,
     onRefresh: () -> Unit,
     onAddLock: () -> Unit,
+    onQuickAccess: (AppRoute) -> Unit,
     onOpenLock: (String) -> Unit,
     selectedTab: MainTab,
     onTab: (MainTab) -> Unit,
@@ -865,7 +914,7 @@ private fun HomeDashboardScreen(
         if (state.filteredLocks.isEmpty()) {
             EmptyState(
                 title = "Không có khóa phù hợp",
-                body = "Bộ lọc hiện tại không có dữ liệu. Bạn có thể đổi bộ lọc hoặc bấm + để chuẩn bị luồng thêm khóa ở Batch 12.",
+                body = "Bộ lọc hiện tại không có dữ liệu. Bạn có thể đổi bộ lọc hoặc bấm + để mở UI-12 Kết nối Gateway / thêm khóa.",
                 spec = spec
             )
         } else {
@@ -883,8 +932,8 @@ private fun HomeDashboardScreen(
         }
 
         Spacer(Modifier.height(spec.gapMd))
-        SectionHeader("Tác vụ nhanh", "Route đã sẵn sàng", spec)
-        QuickAccessGrid(spec)
+        SectionHeader("Tác vụ nhanh", "Bấm trực tiếp để mở chức năng", spec)
+        QuickAccessGrid(spec = spec, onOpen = onQuickAccess)
     }
 }
 
@@ -1378,12 +1427,15 @@ private fun AddPasswordScreen(
     var owner by rememberSaveable { mutableStateOf("Khách / Thành viên") }
     var name by rememberSaveable { mutableStateOf("Mã tạm thời") }
     var code by rememberSaveable { mutableStateOf("258369") }
-    var validFrom by rememberSaveable { mutableStateOf("Hôm nay 14:00") }
-    var validTo by rememberSaveable { mutableStateOf("Ngày mai 12:00") }
+    var validFrom by rememberSaveable { mutableStateOf(defaultValidFromDateTime()) }
+    var validTo by rememberSaveable { mutableStateOf(defaultValidToDateTime()) }
     var repeatRule by rememberSaveable { mutableStateOf("T2/T4/T6 • 09:00-12:00") }
     var selectedTypeName by rememberSaveable { mutableStateOf(PasswordType.Temporary.name) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedType = PasswordType.valueOf(selectedTypeName)
+    LaunchedEffect(selectedTypeName) {
+        validTo = normalizeValidToForPasswordType(validTo, selectedType)
+    }
     val lockId = lock?.id.orEmpty()
     val duplicateName = existing.any { it.type == CredentialType.Password && it.lockIds.contains(lockId) && it.name.equals(name, ignoreCase = true) && it.status !in listOf(CredentialStatus.Revoked, CredentialStatus.Expired, CredentialStatus.Used) }
 
@@ -1396,12 +1448,34 @@ private fun AddPasswordScreen(
             Column(verticalArrangement = Arrangement.spacedBy(spec.gapSm)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
                     PasswordType.values().take(3).forEach { type ->
-                        AplusPillButton(type.label.replace("Mã ", ""), R.drawable.ic_keypad, Modifier.weight(1f), spec, enabled = true, onClick = { selectedTypeName = type.name })
+                        AplusPillButton(
+                            text = type.label.replace("Mã ", ""),
+                            icon = R.drawable.ic_keypad,
+                            modifier = Modifier.weight(1f),
+                            spec = spec,
+                            enabled = true,
+                            selected = selectedType == type,
+                            onClick = {
+                                selectedTypeName = type.name
+                                validTo = normalizeValidToForPasswordType(validTo, type)
+                            }
+                        )
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
                     PasswordType.values().drop(3).forEach { type ->
-                        AplusPillButton(type.label.replace("Mã ", ""), R.drawable.ic_keypad, Modifier.weight(1f), spec, enabled = true, onClick = { selectedTypeName = type.name })
+                        AplusPillButton(
+                            text = type.label.replace("Mã ", ""),
+                            icon = R.drawable.ic_keypad,
+                            modifier = Modifier.weight(1f),
+                            spec = spec,
+                            enabled = true,
+                            selected = selectedType == type,
+                            onClick = {
+                                selectedTypeName = type.name
+                                validTo = normalizeValidToForPasswordType(validTo, type)
+                            }
+                        )
                     }
                 }
             }
@@ -1419,12 +1493,34 @@ private fun AddPasswordScreen(
                 AplusPillButton("Tự sinh", R.drawable.ic_keypad, Modifier.width(92.dp), spec, enabled = true, onClick = { code = (((System.currentTimeMillis() % 900000) + 100000).toString()) })
             }
             Spacer(Modifier.height(spec.gapSm))
-            AplusTextField(validFrom, { validFrom = it }, "Hiệu lực từ", R.drawable.ic_report, spec)
+            AplusDateTimeField(
+                value = validFrom,
+                label = "Hiệu lực từ",
+                icon = R.drawable.ic_report,
+                spec = spec,
+                onDateTimeSelected = { validFrom = it }
+            )
             Spacer(Modifier.height(spec.gapSm))
-            AplusTextField(validTo, { validTo = it }, "Hiệu lực đến", R.drawable.ic_report, spec)
             if (selectedType == PasswordType.Cycle) {
+                AplusDateField(
+                    value = validTo,
+                    label = "Hiệu lực đến (ngày)",
+                    icon = R.drawable.ic_report,
+                    spec = spec,
+                    onDateSelected = { validTo = it }
+                )
+                Spacer(Modifier.height(4.dp))
+                Text("Mã chu kỳ dùng giờ trong lịch lặp bên dưới; hiệu lực đến chỉ chọn ngày kết thúc.", color = AplusTheme.Muted, fontSize = spec.caption, lineHeight = (spec.caption.value + 3).sp)
                 Spacer(Modifier.height(spec.gapSm))
-                AplusTextField(repeatRule, { repeatRule = it }, "Lịch lặp / ngày trong tuần", R.drawable.ic_report, spec)
+                AplusTextField(repeatRule, { repeatRule = it }, "Lịch lặp / ngày trong tuần + giờ", R.drawable.ic_report, spec)
+            } else {
+                AplusDateTimeField(
+                    value = validTo,
+                    label = "Hiệu lực đến",
+                    icon = R.drawable.ic_report,
+                    spec = spec,
+                    onDateTimeSelected = { validTo = it }
+                )
             }
             Spacer(Modifier.height(spec.gapMd))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
@@ -1438,6 +1534,8 @@ private fun AddPasswordScreen(
                     owner.isBlank() -> "Cần nhập người nhận."
                     name.isBlank() -> "Cần nhập tên mã."
                     code.length !in 6..10 -> "Mã phải có 6-10 số."
+                    validFrom.isBlank() || validTo.isBlank() -> "Cần chọn ngày hiệu lực từ/đến."
+                    validatePasswordValidityRange(validFrom, validTo, selectedType == PasswordType.Cycle) != null -> validatePasswordValidityRange(validFrom, validTo, selectedType == PasswordType.Cycle)
                     duplicateName -> "Tên mã đã tồn tại trên khóa này."
                     selectedType == PasswordType.Cycle && repeatRule.isBlank() -> "Mã chu kỳ cần lịch lặp."
                     else -> null
@@ -1482,7 +1580,15 @@ private fun SimpleCredentialCreateScreen(
             Spacer(Modifier.height(spec.gapMd))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
                 PermissionRole.values().take(4).forEach { item ->
-                    AplusPillButton(item.label, R.drawable.ic_user, Modifier.weight(1f), spec, enabled = true, onClick = { roleName = item.name })
+                    AplusPillButton(
+                        text = item.label,
+                        icon = R.drawable.ic_user,
+                        modifier = Modifier.weight(1f),
+                        spec = spec,
+                        enabled = true,
+                        selected = roleName == item.name,
+                        onClick = { roleName = item.name }
+                    )
                 }
             }
             Spacer(Modifier.height(spec.gapSm))
@@ -1657,6 +1763,345 @@ private fun descriptionForCredential(type: CredentialType): String = when (type)
     else -> "Tạo credential mới dùng chung repository và audit log."
 }
 
+
+@Composable
+private fun PairingGatewayScreen(
+    homes: List<vn.aplus.smart.data.HomeInfo>,
+    rooms: List<RoomInfo>,
+    discoveredDevices: List<DiscoveredDevice>,
+    gateways: List<GatewayInfo>,
+    onBack: () -> Unit,
+    onPair: (PairingMethod, String, String, String, String, String, String, String?) -> Unit,
+    selectedTab: MainTab,
+    onTab: (MainTab) -> Unit
+) {
+    var methodName by rememberSaveable { mutableStateOf(PairingMethod.Bluetooth.name) }
+    val method = PairingMethod.valueOf(methodName)
+    var cameraGranted by rememberSaveable { mutableStateOf(false) }
+    var bluetoothGranted by rememberSaveable { mutableStateOf(false) }
+    var locationGranted by rememberSaveable { mutableStateOf(false) }
+    var wifiGranted by rememberSaveable { mutableStateOf(false) }
+    var nearbyGranted by rememberSaveable { mutableStateOf(false) }
+    var notificationGranted by rememberSaveable { mutableStateOf(false) }
+    var scanned by rememberSaveable { mutableStateOf(false) }
+    var selectedSerial by rememberSaveable { mutableStateOf("") }
+    var selectedModel by rememberSaveable { mutableStateOf("Aplus L520 Pro") }
+    var lockName by rememberSaveable { mutableStateOf("Khóa mới Aplus") }
+    var selectedRoomId by rememberSaveable { mutableStateOf(rooms.firstOrNull()?.id.orEmpty()) }
+    var wifiSsid by rememberSaveable { mutableStateOf("Aplus_Office_5G") }
+    var wifiPassword by rememberSaveable { mutableStateOf("") }
+    var selectedGatewayId by rememberSaveable { mutableStateOf(gateways.firstOrNull { it.online }?.id ?: gateways.firstOrNull()?.id.orEmpty()) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    var scanLog by rememberSaveable { mutableStateOf("Chưa quét thiết bị") }
+
+    val requiredPermissions = requiredPermissionsFor(method)
+    val permissionState = mapOf(
+        "Camera" to cameraGranted,
+        "Bluetooth" to bluetoothGranted,
+        "Location" to locationGranted,
+        "Wi‑Fi" to wifiGranted,
+        "Nearby devices" to nearbyGranted,
+        "Notification" to notificationGranted
+    )
+    val missingPermissions = requiredPermissions.filter { permissionState[it] != true }
+    val selectedDevice = discoveredDevices.firstOrNull { it.serial == selectedSerial }
+
+    LaunchedEffect(methodName) {
+        scanned = false
+        selectedSerial = when (method) {
+            PairingMethod.DeviceCode -> "APL-CODE-${(System.currentTimeMillis() % 9000).toString().padStart(4, '0')}"
+            PairingMethod.ManualDemo -> "APL-MANUAL-${(System.currentTimeMillis() % 9000).toString().padStart(4, '0')}"
+            else -> ""
+        }
+        selectedModel = when (method) {
+            PairingMethod.GatewayMqtt -> "Aplus Hotel H3"
+            PairingMethod.Wifi -> "Aplus Gate G1"
+            else -> "Aplus L520 Pro"
+        }
+        lockName = when (method) {
+            PairingMethod.GatewayMqtt -> "Khóa gateway mới"
+            PairingMethod.Wifi -> "Khóa Wi‑Fi mới"
+            PairingMethod.ManualDemo -> "Khóa demo thủ công"
+            else -> "Khóa mới Aplus"
+        }
+        scanLog = "Đã chọn ${method.label}. Chạy preflight rồi quét/mock nhập thiết bị."
+    }
+
+    fun runMockScan() {
+        if (missingPermissions.isNotEmpty()) {
+            error = "Còn thiếu quyền: ${missingPermissions.joinToString()}"
+            scanLog = "Preflight fail: thiếu ${missingPermissions.joinToString()}"
+            return
+        }
+        scanned = true
+        val candidate = discoveredDevices.firstOrNull { device ->
+            when (method) {
+                PairingMethod.QrCode -> true
+                PairingMethod.Bluetooth -> device.recommendedMethod == PairingMethod.Bluetooth
+                PairingMethod.Wifi -> device.recommendedMethod == PairingMethod.Wifi
+                PairingMethod.GatewayMqtt -> device.recommendedMethod == PairingMethod.GatewayMqtt
+                else -> false
+            }
+        }
+        if (candidate != null) {
+            selectedSerial = candidate.serial
+            selectedModel = candidate.model
+            lockName = candidate.type.replace("Khóa", "Khóa").ifBlank { "Khóa mới Aplus" }
+            scanLog = "Đã tìm thấy ${candidate.model} • ${candidate.serial} • RSSI ${candidate.rssi} dBm"
+        } else {
+            scanLog = "Không có thiết bị phù hợp; có thể dùng nhập thủ công demo."
+        }
+    }
+
+    fun submit() {
+        error = when {
+            missingPermissions.isNotEmpty() -> "Còn thiếu quyền: ${missingPermissions.joinToString()}"
+            selectedSerial.isBlank() -> "Cần quét hoặc nhập serial/mã thiết bị."
+            selectedModel.isBlank() -> "Cần nhập model thiết bị."
+            lockName.isBlank() -> "Cần đặt tên khóa."
+            selectedRoomId.isBlank() -> "Cần chọn phòng/khu vực."
+            selectedDevice?.alreadyBound == true -> "Thiết bị đã được bind với owner khác. Cần reset hoặc chuyển quyền."
+            method == PairingMethod.Wifi && (wifiSsid.isBlank() || wifiPassword.length < 8) -> "Wi‑Fi setup cần SSID và mật khẩu tối thiểu 8 ký tự."
+            method == PairingMethod.GatewayMqtt && selectedGatewayId.isBlank() -> "Cần chọn gateway để gán khóa."
+            method == PairingMethod.GatewayMqtt && gateways.firstOrNull { it.id == selectedGatewayId }?.online == false -> "Gateway đang offline, không thể pairing."
+            else -> null
+        }
+        if (error == null) {
+            onPair(method, selectedSerial, selectedModel, lockName, selectedRoomId, wifiSsid, wifiPassword, selectedGatewayId.takeIf { it.isNotBlank() })
+        }
+    }
+
+    BaseScreen(
+        title = "Kết nối Gateway",
+        subtitle = "UI-12 • thêm khóa & networking",
+        showBack = true,
+        onBack = onBack,
+        rightIcon = R.drawable.ic_gateway,
+        selectedTab = selectedTab,
+        onTab = onTab,
+        scrollable = true
+    ) { spec ->
+        error?.let { AplusMessageBanner(it, spec) { error = null }; Spacer(Modifier.height(spec.gapSm)) }
+
+        AplusCard(spec) {
+            Text("Pairing Wizard", color = AplusTheme.Text, fontWeight = FontWeight.Black, fontSize = spec.screenTitle)
+            Text("Chọn phương thức, kiểm tra quyền, quét thiết bị, cấu hình mạng/gateway rồi tạo LockDevice thật trong repository.", color = AplusTheme.Muted, fontSize = spec.body, lineHeight = (spec.body.value + 4).sp)
+            Spacer(Modifier.height(spec.gapMd))
+            Column(verticalArrangement = Arrangement.spacedBy(spec.gapSm)) {
+                PairingMethod.values().toList().chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
+                        row.forEach { item ->
+                            AplusPillButton(
+                                text = item.shortLabel,
+                                icon = iconForPairingMethod(item),
+                                modifier = Modifier.weight(1f),
+                                spec = spec,
+                                selected = method == item,
+                                onClick = { methodName = item.name }
+                            )
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+            Spacer(Modifier.height(spec.gapSm))
+            AplusStatusChip("Đang chọn: ${method.label}", AplusTheme.Red, spec)
+        }
+
+        Spacer(Modifier.height(spec.gapMd))
+        AplusCard(spec) {
+            SectionHeader("Preflight permission", if (missingPermissions.isEmpty()) "Đủ quyền" else "Thiếu ${missingPermissions.size}", spec)
+            Spacer(Modifier.height(spec.gapSm))
+            Text("Batch 12 không bỏ qua quyền Android mới. Bản demo dùng checkbox để mô phỏng cấp quyền trước khi scan/provision.", color = AplusTheme.Muted, fontSize = spec.caption, lineHeight = (spec.caption.value + 3).sp)
+            Spacer(Modifier.height(spec.gapSm))
+            PermissionToggle("Camera", requiredPermissions.contains("Camera"), cameraGranted, { cameraGranted = !cameraGranted }, spec)
+            PermissionToggle("Bluetooth", requiredPermissions.contains("Bluetooth"), bluetoothGranted, { bluetoothGranted = !bluetoothGranted }, spec)
+            PermissionToggle("Location", requiredPermissions.contains("Location"), locationGranted, { locationGranted = !locationGranted }, spec)
+            PermissionToggle("Wi‑Fi", requiredPermissions.contains("Wi‑Fi"), wifiGranted, { wifiGranted = !wifiGranted }, spec)
+            PermissionToggle("Nearby devices", requiredPermissions.contains("Nearby devices"), nearbyGranted, { nearbyGranted = !nearbyGranted }, spec)
+            PermissionToggle("Notification", requiredPermissions.contains("Notification"), notificationGranted, { notificationGranted = !notificationGranted }, spec)
+        }
+
+        Spacer(Modifier.height(spec.gapMd))
+        AplusCard(spec) {
+            SectionHeader("Quét / nhập thiết bị", if (scanned) "Đã scan" else "Chưa scan", spec)
+            Spacer(Modifier.height(spec.gapSm))
+            Text(scanLog, color = AplusTheme.Muted, fontSize = spec.body, lineHeight = (spec.body.value + 4).sp)
+            Spacer(Modifier.height(spec.gapSm))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
+                AplusPillButton("Quét mock", iconForPairingMethod(method), Modifier.weight(1f), spec, enabled = method !in listOf(PairingMethod.DeviceCode, PairingMethod.ManualDemo), onClick = ::runMockScan)
+                AplusPillButton("Log retry", R.drawable.ic_report, Modifier.weight(1f), spec, onClick = { scanLog = "Retry log: timeout/sai Wi‑Fi/duplicate/gateway offline đều được chặn trước khi tạo lock." })
+            }
+            Spacer(Modifier.height(spec.gapSm))
+            if (scanned && method !in listOf(PairingMethod.DeviceCode, PairingMethod.ManualDemo)) {
+                discoveredDevices.forEach { device ->
+                    DeviceCandidateRow(device, selected = selectedSerial == device.serial, spec = spec) {
+                        selectedSerial = device.serial
+                        selectedModel = device.model
+                        lockName = device.type.ifBlank { "Khóa mới Aplus" }
+                        scanLog = if (device.alreadyBound) "${device.serial} đã bind; không được bind đè." else "Đã chọn ${device.serial}"
+                    }
+                    Spacer(Modifier.height(spec.gapSm))
+                }
+            }
+            AplusTextField(selectedSerial, { selectedSerial = it.uppercase().take(32) }, "Serial / mã thiết bị", R.drawable.ic_keypad, spec)
+            Spacer(Modifier.height(spec.gapSm))
+            AplusTextField(selectedModel, { selectedModel = it }, "Model thiết bị", R.drawable.ic_lock, spec)
+        }
+
+        Spacer(Modifier.height(spec.gapMd))
+        if (method == PairingMethod.Wifi || method == PairingMethod.QrCode || method == PairingMethod.Bluetooth) {
+            AplusCard(spec) {
+                SectionHeader("Wi‑Fi setup", "Provision network", spec)
+                Spacer(Modifier.height(spec.gapSm))
+                AplusTextField(wifiSsid, { wifiSsid = it }, "SSID Wi‑Fi", R.drawable.ic_wifi, spec)
+                Spacer(Modifier.height(spec.gapSm))
+                AplusTextField(wifiPassword, { wifiPassword = it }, "Mật khẩu Wi‑Fi", R.drawable.ic_shield, spec, password = true)
+                Spacer(Modifier.height(spec.gapSm))
+                Text("Mật khẩu Wi‑Fi chỉ là mock trong bản demo; production không lưu plain text.", color = AplusTheme.Yellow, fontSize = spec.caption)
+            }
+            Spacer(Modifier.height(spec.gapMd))
+        }
+
+        if (method == PairingMethod.GatewayMqtt) {
+            AplusCard(spec) {
+                SectionHeader("Gateway/MQTT", "Chọn gateway", spec)
+                Spacer(Modifier.height(spec.gapSm))
+                gateways.forEach { gateway ->
+                    GatewayRow(gateway, selected = selectedGatewayId == gateway.id, spec = spec) { selectedGatewayId = gateway.id }
+                    Spacer(Modifier.height(spec.gapSm))
+                }
+            }
+            Spacer(Modifier.height(spec.gapMd))
+        }
+
+        AplusCard(spec) {
+            SectionHeader("Đặt tên & chọn phòng", "Tạo LockDevice", spec)
+            Spacer(Modifier.height(spec.gapSm))
+            AplusTextField(lockName, { lockName = it }, "Tên khóa", R.drawable.ic_lock, spec)
+            Spacer(Modifier.height(spec.gapSm))
+            Text("Chọn phòng/khu vực", color = AplusTheme.Muted, fontSize = spec.label, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(spec.gapXs))
+            Column(verticalArrangement = Arrangement.spacedBy(spec.gapSm)) {
+                rooms.chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
+                        row.forEach { room ->
+                            val homeName = homes.firstOrNull { it.id == room.homeId }?.name ?: room.homeId
+                            AplusPillButton(
+                                text = room.roomNo,
+                                icon = R.drawable.ic_home,
+                                modifier = Modifier.weight(1f),
+                                spec = spec,
+                                selected = selectedRoomId == room.id,
+                                onClick = { selectedRoomId = room.id; lockName = if (lockName.isBlank() || lockName.startsWith("Khóa")) room.name else lockName }
+                            )
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+            Spacer(Modifier.height(spec.gapSm))
+            rooms.firstOrNull { it.id == selectedRoomId }?.let { room ->
+                val homeName = homes.firstOrNull { it.id == room.homeId }?.name ?: room.homeId
+                MiniInfoCard("Phòng chọn", "$homeName • ${room.floor} • ${room.name}", R.drawable.ic_home, Modifier.fillMaxWidth(), spec)
+            }
+        }
+
+        Spacer(Modifier.height(spec.gapMd))
+        AplusButton("Hoàn tất pairing", R.drawable.ic_gateway, onClick = ::submit, spec = spec)
+        Spacer(Modifier.height(spec.gapMd))
+        SecurityNote("Batch 12 guard", "Chặn serial trùng, thiết bị đã bind, thiếu permission, Wi‑Fi sai policy, gateway offline và không tạo lock nếu pairing thất bại.", spec)
+    }
+}
+
+private fun requiredPermissionsFor(method: PairingMethod): List<String> = when (method) {
+    PairingMethod.QrCode -> listOf("Camera", "Wi‑Fi", "Notification")
+    PairingMethod.DeviceCode -> listOf("Notification")
+    PairingMethod.Bluetooth -> listOf("Bluetooth", "Nearby devices", "Location", "Notification")
+    PairingMethod.Wifi -> listOf("Wi‑Fi", "Location", "Notification")
+    PairingMethod.GatewayMqtt -> listOf("Wi‑Fi", "Notification")
+    PairingMethod.ManualDemo -> emptyList()
+}
+
+private fun iconForPairingMethod(method: PairingMethod): Int = when (method) {
+    PairingMethod.QrCode -> R.drawable.ic_qr
+    PairingMethod.DeviceCode -> R.drawable.ic_keypad
+    PairingMethod.Bluetooth -> R.drawable.ic_bluetooth
+    PairingMethod.Wifi -> R.drawable.ic_wifi
+    PairingMethod.GatewayMqtt -> R.drawable.ic_gateway
+    PairingMethod.ManualDemo -> R.drawable.ic_more
+}
+
+@Composable
+private fun PermissionToggle(title: String, required: Boolean, granted: Boolean, onToggle: () -> Unit, spec: UiScaleConfig) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (required && granted) AplusTheme.Red.copy(alpha = 0.22f) else AplusTheme.Field)
+            .border(BorderStroke(1.dp, if (required && !granted) AplusTheme.Yellow.copy(alpha = 0.5f) else AplusTheme.Stroke), RoundedCornerShape(14.dp))
+            .clickable(enabled = required, onClick = onToggle)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AplusIcon(if (title.contains("Wi")) R.drawable.ic_wifi else if (title.contains("Bluetooth")) R.drawable.ic_bluetooth else if (title.contains("Camera")) R.drawable.ic_qr else R.drawable.ic_shield, if (required && granted) AplusTheme.Red else AplusTheme.Muted, spec.icon)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = AplusTheme.Text, fontWeight = FontWeight.Bold, fontSize = spec.body)
+            Text(if (!required) "Không cần cho phương thức hiện tại" else if (granted) "Đã cấp mock" else "Bấm để cấp mock", color = if (required && !granted) AplusTheme.Yellow else AplusTheme.Muted, fontSize = spec.caption)
+        }
+        AplusStatusChip(if (!required) "Skip" else if (granted) "OK" else "Thiếu", if (!required) AplusTheme.Subtle else if (granted) AplusTheme.Green else AplusTheme.Yellow, spec)
+    }
+}
+
+@Composable
+private fun DeviceCandidateRow(device: DiscoveredDevice, selected: Boolean, spec: UiScaleConfig, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) AplusTheme.Red.copy(alpha = 0.2f) else AplusTheme.CardDark)
+            .border(BorderStroke(1.dp, if (selected) AplusTheme.Red else AplusTheme.Stroke), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(AplusTheme.Field), contentAlignment = Alignment.Center) {
+            AplusIcon(iconForPairingMethod(device.recommendedMethod), if (device.alreadyBound) AplusTheme.Yellow else AplusTheme.Red, spec.icon)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(device.model, color = AplusTheme.Text, fontWeight = FontWeight.Black, fontSize = spec.body, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("${device.serial} • RSSI ${device.rssi}dBm • ${device.capabilities.joinToString()}", color = AplusTheme.Muted, fontSize = spec.caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        AplusStatusChip(if (device.alreadyBound) "Bound" else "Ready", if (device.alreadyBound) AplusTheme.Yellow else AplusTheme.Green, spec)
+    }
+}
+
+@Composable
+private fun GatewayRow(gateway: GatewayInfo, selected: Boolean, spec: UiScaleConfig, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) AplusTheme.Red.copy(alpha = 0.2f) else AplusTheme.CardDark)
+            .border(BorderStroke(1.dp, if (selected) AplusTheme.Red else AplusTheme.Stroke), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(AplusTheme.Field), contentAlignment = Alignment.Center) {
+            AplusIcon(R.drawable.ic_gateway, if (gateway.online) AplusTheme.Red else AplusTheme.Yellow, spec.icon)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(gateway.name, color = AplusTheme.Text, fontWeight = FontWeight.Black, fontSize = spec.body, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("FW ${gateway.firmwareVersion} • sóng ${gateway.signal}/4 • ${gateway.lockIds.size} khóa", color = AplusTheme.Muted, fontSize = spec.caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        AplusStatusChip(if (gateway.online) "Online" else "Offline", if (gateway.online) AplusTheme.Green else AplusTheme.Yellow, spec)
+    }
+}
+
 @Composable
 private fun RemoteUnlockScreen(
     lock: LockDevice,
@@ -1762,6 +2207,128 @@ private fun RemoteUnlockScreen(
         }
         Spacer(Modifier.height(spec.gapMd))
         SecurityNote("Command lifecycle", "pending → sending → success/failed/timeout. UI không đổi trạng thái khóa trước khi command success.", spec)
+    }
+}
+
+
+private data class MoreHubAction(
+    val group: String,
+    val title: String,
+    val code: String,
+    val icon: Int,
+    val route: AppRoute? = null,
+    val featureTitle: String = title
+)
+
+private val moreHubActions = listOf(
+    MoreHubAction("Quản lý quyền", "Phòng", "UI-11", R.drawable.ic_home, featureTitle = "Quản lý phòng"),
+    MoreHubAction("Quản lý quyền", "Nhân sự", "UI-08", R.drawable.ic_user, featureTitle = "Nhân sự & khách thuê"),
+    MoreHubAction("Quản lý quyền", "Chuyển khóa", "UI-22", R.drawable.ic_remote, featureTitle = "Chuyển quyền khóa"),
+    MoreHubAction("Quản lý quyền", "NFC", "UI-15", R.drawable.ic_nfc, AppRoute.NfcPhoneCard, "NFC & thẻ điện thoại"),
+    MoreHubAction("Vận hành", "Lịch sử", "UI-10", R.drawable.ic_report, featureTitle = "Lịch sử mở khóa"),
+    MoreHubAction("Vận hành", "Pin", "UI-21", R.drawable.ic_battery, featureTitle = "Pin & điện năng"),
+    MoreHubAction("Vận hành", "Báo cáo", "UI-17", R.drawable.ic_report, featureTitle = "Báo cáo dữ liệu"),
+    MoreHubAction("Vận hành", "Cảnh báo", "UI-19", R.drawable.ic_shield, featureTitle = "Trung tâm báo động"),
+    MoreHubAction("Kết nối", "Gateway", "UI-12", R.drawable.ic_gateway, AppRoute.PairingGateway, "Kết nối Gateway"),
+    MoreHubAction("Kết nối", "Wi‑Fi", "UI-12", R.drawable.ic_wifi, AppRoute.PairingGateway, "Wi‑Fi setup"),
+    MoreHubAction("Kết nối", "Bluetooth", "UI-12", R.drawable.ic_bluetooth, AppRoute.PairingGateway, "Bluetooth nearby"),
+    MoreHubAction("Kết nối", "PMS", "UI-14", R.drawable.ic_report, featureTitle = "Apartment / Hotel PMS"),
+    MoreHubAction("An toàn", "Tổ hợp", "UI-28", R.drawable.ic_combo, AppRoute.CombinationUnlock, "Mở khóa kết hợp"),
+    MoreHubAction("An toàn", "Normally Open", "UI-20", R.drawable.ic_lock, featureTitle = "Mở thường xuyên"),
+    MoreHubAction("An toàn", "Cạy khóa", "UI-19", R.drawable.ic_shield, featureTitle = "Cảnh báo cạy khóa"),
+    MoreHubAction("An toàn", "Door Alarm", "UI-19", R.drawable.ic_phone, featureTitle = "Cảnh báo cửa")
+)
+
+@Composable
+private fun MoreHubScreen(
+    onBack: () -> Unit,
+    onOpenGateway: () -> Unit,
+    onOpenFeature: (String, String) -> Unit,
+    onOpenRoute: (AppRoute) -> Unit,
+    selectedTab: MainTab,
+    onTab: (MainTab) -> Unit
+) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val filtered = remember(query) {
+        if (query.isBlank()) moreHubActions else moreHubActions.filter {
+            it.title.contains(query, ignoreCase = true) ||
+                it.featureTitle.contains(query, ignoreCase = true) ||
+                it.group.contains(query, ignoreCase = true) ||
+                it.code.contains(query, ignoreCase = true)
+        }
+    }
+    BaseScreen(
+        title = "More",
+        subtitle = "Tính năng nâng cao",
+        showBack = true,
+        onBack = onBack,
+        rightIcon = R.drawable.ic_more,
+        selectedTab = selectedTab,
+        onTab = onTab,
+        scrollable = true
+    ) { spec ->
+        AplusTextField(
+            value = query,
+            onValueChange = { query = it },
+            label = "Tìm chức năng...",
+            icon = R.drawable.ic_more,
+            spec = spec
+        )
+        Spacer(Modifier.height(spec.gapMd))
+
+        val groups = filtered.groupBy { it.group }
+        if (filtered.isEmpty()) {
+            AplusCard(spec) {
+                Text("Không tìm thấy chức năng", color = AplusTheme.Text, fontWeight = FontWeight.Black, fontSize = spec.body)
+                Spacer(Modifier.height(spec.gapXs))
+                Text("Thử nhập Gateway, Wi‑Fi, phòng, nhân sự, cảnh báo...", color = AplusTheme.Muted, fontSize = spec.caption)
+            }
+        } else {
+            groups.forEach { (group, actions) ->
+                Text(group, color = AplusTheme.Text, fontWeight = FontWeight.Black, fontSize = spec.screenTitle)
+                Spacer(Modifier.height(spec.gapSm))
+                actions.chunked(4).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
+                        row.forEach { action ->
+                            MoreHubTile(
+                                action = action,
+                                modifier = Modifier.weight(1f),
+                                spec = spec,
+                                onClick = {
+                                    val target = action.route
+                                    when (target) {
+                                        AppRoute.PairingGateway -> onOpenGateway()
+                                        null -> onOpenFeature(action.featureTitle, action.code)
+                                        else -> onOpenRoute(target)
+                                    }
+                                }
+                            )
+                        }
+                        repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                    Spacer(Modifier.height(spec.gapSm))
+                }
+                Spacer(Modifier.height(spec.gapMd))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoreHubTile(action: MoreHubAction, modifier: Modifier, spec: UiScaleConfig, onClick: () -> Unit) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(AplusTheme.CardDark.copy(alpha = 0.96f))
+            .border(BorderStroke(1.dp, AplusTheme.Stroke), RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        AplusIcon(action.icon, AplusTheme.Red, spec.icon + 5.dp)
+        Spacer(Modifier.height(8.dp))
+        Text(action.title, color = AplusTheme.Text, fontWeight = FontWeight.Bold, fontSize = spec.caption, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
     }
 }
 
@@ -1919,6 +2486,318 @@ private fun AplusTextField(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AplusDateTimeField(
+    value: String,
+    label: String,
+    icon: Int,
+    spec: UiScaleConfig,
+    onDateTimeSelected: (String) -> Unit
+) {
+    var showPicker by rememberSaveable(label) { mutableStateOf(false) }
+    val parsedMillis = parseDateTimeMillis(value) ?: System.currentTimeMillis()
+    val parsedCalendar = remember(value) { Calendar.getInstance().apply { timeInMillis = parsedMillis } }
+    var hourText by rememberSaveable(label, value) { mutableStateOf(parsedCalendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')) }
+    var minuteText by rememberSaveable(label, value) { mutableStateOf(parsedCalendar.get(Calendar.MINUTE).toString().padStart(2, '0')) }
+    val pickerState = rememberDatePickerState(initialSelectedDateMillis = parsedMillis)
+
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(spec.inputHeight)
+                .clip(RoundedCornerShape(15.dp))
+                .background(AplusTheme.Field)
+                .border(BorderStroke(1.dp, AplusTheme.Stroke), RoundedCornerShape(15.dp))
+                .clickable { showPicker = true }
+                .padding(horizontal = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AplusIcon(icon, AplusTheme.Red, spec.icon)
+            Spacer(Modifier.width(11.dp))
+            Column(Modifier.weight(1f)) {
+                Text(label, color = AplusTheme.Muted, fontSize = spec.label, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(value.ifBlank { "Chọn ngày và giờ" }, color = AplusTheme.Text, fontSize = spec.body, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text("Lịch", color = AplusTheme.Red, fontSize = spec.caption, fontWeight = FontWeight.Black)
+        }
+    }
+
+    if (showPicker) {
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = pickerState.selectedDateMillis ?: parsedMillis
+                        val hour = hourText.toIntOrNull()?.coerceIn(0, 23) ?: parsedCalendar.get(Calendar.HOUR_OF_DAY)
+                        val minute = minuteText.toIntOrNull()?.coerceIn(0, 59) ?: parsedCalendar.get(Calendar.MINUTE)
+                        onDateTimeSelected(formatDateTimeForUi(millis, hour, minute))
+                        showPicker = false
+                    }
+                ) { Text("Chọn", color = AplusTheme.Red, fontWeight = FontWeight.Black) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Hủy", color = AplusTheme.Muted) }
+            }
+        ) {
+            Column(
+                Modifier
+                    .padding(bottom = 12.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    if (label.contains("từ", ignoreCase = true)) "Sửa hiệu lực từ" else "Sửa hiệu lực đến",
+                    color = AplusTheme.Text,
+                    fontWeight = FontWeight.Black,
+                    fontSize = spec.body,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+                Text(
+                    "Ngày/giờ đang chọn: ${formatDateTimeForUi(pickerState.selectedDateMillis ?: parsedMillis, hourText.toIntOrNull()?.coerceIn(0, 23) ?: 0, minuteText.toIntOrNull()?.coerceIn(0, 59) ?: 0)}",
+                    color = AplusTheme.Red,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = spec.caption,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    AplusTimeInput(hourText, { hourText = it.filter(Char::isDigit).take(2) }, "Giờ", spec, Modifier.weight(1f))
+                    Text(":", color = AplusTheme.Text, fontSize = spec.screenTitle, fontWeight = FontWeight.Black)
+                    AplusTimeInput(minuteText, { minuteText = it.filter(Char::isDigit).take(2) }, "Phút", spec, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AplusTimeAdjustButton("-1h", spec, Modifier.weight(1f)) {
+                        hourText = ((hourText.toIntOrNull() ?: 0) - 1).floorMod24().toString().padStart(2, '0')
+                    }
+                    AplusTimeAdjustButton("+1h", spec, Modifier.weight(1f)) {
+                        hourText = ((hourText.toIntOrNull() ?: 0) + 1).floorMod24().toString().padStart(2, '0')
+                    }
+                    AplusTimeAdjustButton("-15p", spec, Modifier.weight(1f)) {
+                        val updated = ((minuteText.toIntOrNull() ?: 0) - 15).floorMod60()
+                        minuteText = updated.toString().padStart(2, '0')
+                    }
+                    AplusTimeAdjustButton("+15p", spec, Modifier.weight(1f)) {
+                        val updated = ((minuteText.toIntOrNull() ?: 0) + 15).floorMod60()
+                        minuteText = updated.toString().padStart(2, '0')
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AplusTimeAdjustButton("Giờ hiện tại", spec, Modifier.weight(1f)) {
+                        val now = Calendar.getInstance()
+                        hourText = now.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
+                        minuteText = now.get(Calendar.MINUTE).toString().padStart(2, '0')
+                    }
+                    AplusTimeAdjustButton("12 giờ sau", spec, Modifier.weight(1f)) {
+                        val later = Calendar.getInstance().apply { add(Calendar.HOUR_OF_DAY, 12) }
+                        hourText = later.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
+                        minuteText = later.get(Calendar.MINUTE).toString().padStart(2, '0')
+                    }
+                }
+                Text("Bấm các nút +/- hoặc nhập trực tiếp giờ/phút, rồi chọn ngày ở lịch bên dưới.", color = AplusTheme.Muted, fontSize = spec.caption, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                DatePicker(state = pickerState)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AplusTimeAdjustButton(
+    text: String,
+    spec: UiScaleConfig,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(AplusTheme.Red.copy(alpha = 0.16f))
+            .border(BorderStroke(1.dp, AplusTheme.Red.copy(alpha = 0.42f)), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = AplusTheme.Red, fontSize = spec.caption, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
+    }
+}
+
+private fun Int.floorMod24(): Int = ((this % 24) + 24) % 24
+private fun Int.floorMod60(): Int = ((this % 60) + 60) % 60
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AplusDateField(
+    value: String,
+    label: String,
+    icon: Int,
+    spec: UiScaleConfig,
+    onDateSelected: (String) -> Unit
+) {
+    var showPicker by rememberSaveable(label) { mutableStateOf(false) }
+    val parsedMillis = parseDateOnlyStartMillis(value) ?: parseDateTimeMillis(value) ?: System.currentTimeMillis()
+    val pickerState = rememberDatePickerState(initialSelectedDateMillis = parsedMillis)
+
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(spec.inputHeight)
+                .clip(RoundedCornerShape(15.dp))
+                .background(AplusTheme.Field)
+                .border(BorderStroke(1.dp, AplusTheme.Stroke), RoundedCornerShape(15.dp))
+                .clickable { showPicker = true }
+                .padding(horizontal = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AplusIcon(icon, AplusTheme.Red, spec.icon)
+            Spacer(Modifier.width(11.dp))
+            Column(Modifier.weight(1f)) {
+                Text(label, color = AplusTheme.Muted, fontSize = spec.label, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(value.ifBlank { "Chọn ngày" }, color = AplusTheme.Text, fontSize = spec.body, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text("Lịch", color = AplusTheme.Red, fontSize = spec.caption, fontWeight = FontWeight.Black)
+        }
+    }
+
+    if (showPicker) {
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = pickerState.selectedDateMillis ?: parsedMillis
+                        onDateSelected(formatDateForUi(millis))
+                        showPicker = false
+                    }
+                ) { Text("Chọn", color = AplusTheme.Red, fontWeight = FontWeight.Black) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Hủy", color = AplusTheme.Muted) }
+            }
+        ) {
+            Column(Modifier.padding(bottom = 12.dp)) {
+                DatePicker(state = pickerState)
+                Text("Chỉ chọn ngày kết thúc. Giờ mở của mã chu kỳ lấy theo lịch lặp.", color = AplusTheme.Muted, fontSize = spec.caption, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AplusTimeInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    spec: UiScaleConfig,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier) {
+        Text(label, color = AplusTheme.Muted, fontSize = spec.caption, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(AplusTheme.Field)
+                .border(BorderStroke(1.dp, AplusTheme.Red.copy(alpha = 0.35f)), RoundedCornerShape(13.dp))
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle = TextStyle(color = AplusTheme.Text, fontSize = spec.body, fontWeight = FontWeight.Black),
+                cursorBrush = SolidColor(AplusTheme.Red),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+private const val APLUS_DATE_TIME_PATTERN = "dd/MM/yyyy HH:mm"
+private const val APLUS_DATE_PATTERN = "dd/MM/yyyy"
+
+private fun defaultValidFromDateTime(): String = SimpleDateFormat(APLUS_DATE_TIME_PATTERN, Locale("vi", "VN")).format(Date())
+
+private fun defaultValidToDateTime(): String = dateTimePlusHoursForUi(12)
+
+private fun dateTimePlusHoursForUi(hours: Int): String {
+    val calendar = Calendar.getInstance().apply { add(Calendar.HOUR_OF_DAY, hours) }
+    return SimpleDateFormat(APLUS_DATE_TIME_PATTERN, Locale("vi", "VN")).format(calendar.time)
+}
+
+private fun parseDateTimeMillis(value: String): Long? {
+    return runCatching {
+        SimpleDateFormat(APLUS_DATE_TIME_PATTERN, Locale("vi", "VN")).apply { isLenient = false }.parse(value)?.time
+    }.getOrNull()
+}
+
+private fun parseDateOnlyStartMillis(value: String): Long? {
+    return runCatching {
+        SimpleDateFormat(APLUS_DATE_PATTERN, Locale("vi", "VN")).apply { isLenient = false }.parse(value)?.time
+    }.getOrNull()
+}
+
+private fun parseDateOnlyEndMillis(value: String): Long? {
+    val start = parseDateOnlyStartMillis(value) ?: return null
+    return Calendar.getInstance().apply {
+        timeInMillis = start
+        set(Calendar.HOUR_OF_DAY, 23)
+        set(Calendar.MINUTE, 59)
+        set(Calendar.SECOND, 59)
+        set(Calendar.MILLISECOND, 999)
+    }.timeInMillis
+}
+
+private fun normalizeValidToForPasswordType(value: String, type: PasswordType): String {
+    return if (type == PasswordType.Cycle) {
+        val millis = parseDateTimeMillis(value) ?: parseDateOnlyStartMillis(value) ?: Calendar.getInstance().apply { add(Calendar.HOUR_OF_DAY, 12) }.timeInMillis
+        formatDateForUi(millis)
+    } else {
+        if (parseDateTimeMillis(value) != null) {
+            value
+        } else {
+            val millis = parseDateOnlyStartMillis(value)
+            if (millis != null) formatDateTimeForUi(millis, 23, 59) else defaultValidToDateTime()
+        }
+    }
+}
+
+private fun validatePasswordValidityRange(validFrom: String, validTo: String, dateOnlyValidTo: Boolean): String? {
+    val fromMillis = parseDateTimeMillis(validFrom) ?: return "Hiệu lực từ phải theo dạng dd/MM/yyyy HH:mm."
+    val toMillis = if (dateOnlyValidTo) {
+        parseDateOnlyEndMillis(validTo) ?: return "Hiệu lực đến của mã chu kỳ chỉ cần ngày, theo dạng dd/MM/yyyy."
+    } else {
+        parseDateTimeMillis(validTo) ?: return "Hiệu lực đến phải theo dạng dd/MM/yyyy HH:mm."
+    }
+    val now = System.currentTimeMillis()
+    if (fromMillis < now - 60_000L) return "Hiệu lực từ không được là thời điểm trong quá khứ."
+    if (toMillis <= now) return "Hiệu lực đến không được là ngày/thời điểm trong quá khứ."
+    if (toMillis <= fromMillis) return "Hiệu lực đến phải sau hiệu lực từ."
+    return null
+}
+
+private fun formatDateTimeForUi(dateMillis: Long, hour: Int, minute: Int): String {
+    val calendar = Calendar.getInstance().apply {
+        timeInMillis = dateMillis
+        set(Calendar.HOUR_OF_DAY, hour.coerceIn(0, 23))
+        set(Calendar.MINUTE, minute.coerceIn(0, 59))
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    return SimpleDateFormat(APLUS_DATE_TIME_PATTERN, Locale("vi", "VN")).format(calendar.time)
+}
+
+private fun formatDateForUi(millis: Long): String {
+    return SimpleDateFormat(APLUS_DATE_PATTERN, Locale("vi", "VN")).format(Date(millis))
+}
+
 @Composable
 private fun AplusButton(text: String, icon: Int, onClick: () -> Unit, spec: UiScaleConfig, enabled: Boolean = true) {
     Row(
@@ -1958,21 +2837,35 @@ private fun AplusSecondaryButton(text: String, icon: Int, onClick: () -> Unit, s
 }
 
 @Composable
-private fun AplusPillButton(text: String, icon: Int, modifier: Modifier, spec: UiScaleConfig, enabled: Boolean = true, onClick: (() -> Unit)? = null) {
+private fun AplusPillButton(
+    text: String,
+    icon: Int,
+    modifier: Modifier,
+    spec: UiScaleConfig,
+    enabled: Boolean = true,
+    selected: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
+    val background = when {
+        !enabled -> AplusTheme.Field.copy(alpha = 0.55f)
+        selected -> AplusTheme.Red
+        else -> AplusTheme.Field
+    }
+    val foreground = if (selected && enabled) Color.White else AplusTheme.Text
     Row(
         modifier = modifier
             .height(if (spec.buttonHeight < 42.dp) 38.dp else spec.buttonHeight - 4.dp)
             .clip(RoundedCornerShape(15.dp))
-            .background(AplusTheme.Field.copy(alpha = if (enabled) 1f else 0.55f))
-            .border(BorderStroke(1.dp, AplusTheme.Stroke), RoundedCornerShape(15.dp))
+            .background(background)
+            .border(BorderStroke(1.dp, if (selected && enabled) AplusTheme.Red else AplusTheme.Stroke), RoundedCornerShape(15.dp))
             .clickable(enabled = enabled && onClick != null) { onClick?.invoke() }
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        AplusIcon(icon, AplusTheme.Text, spec.icon)
+        AplusIcon(icon, foreground, spec.icon)
         Spacer(Modifier.width(8.dp))
-        Text(text, color = AplusTheme.Text, fontWeight = FontWeight.Bold, fontSize = spec.body, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(text, color = foreground, fontWeight = FontWeight.Bold, fontSize = spec.body, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -1993,8 +2886,8 @@ private fun TermsRow(checked: Boolean, text: String, onClick: () -> Unit, spec: 
                 modifier = Modifier
                     .size(20.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (checked) AplusTheme.Green else Color.Transparent)
-                    .border(BorderStroke(1.dp, if (checked) AplusTheme.Green else AplusTheme.Muted), RoundedCornerShape(6.dp)),
+                    .background(if (checked) AplusTheme.Red else Color.Transparent)
+                    .border(BorderStroke(1.dp, if (checked) AplusTheme.Red else AplusTheme.Muted), RoundedCornerShape(6.dp)),
                 contentAlignment = Alignment.Center
             ) { if (checked) Text("✓", color = Color.White, fontWeight = FontWeight.Black, fontSize = 13.sp) }
             Spacer(Modifier.width(10.dp))
@@ -2126,12 +3019,12 @@ private fun RiskFilterRow(selected: RiskFilter, onSelect: (RiskFilter) -> Unit, 
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(if (active) AplusTheme.Card.copy(alpha = 0.96f) else AplusTheme.CardDark)
+                    .background(if (active) AplusTheme.Red else AplusTheme.CardDark)
                     .border(BorderStroke(1.dp, if (active) AplusTheme.Red else AplusTheme.Stroke), RoundedCornerShape(999.dp))
                     .clickable { onSelect(filter) }
                     .padding(horizontal = 13.dp, vertical = 8.dp)
             ) {
-                Text(filter.label, color = if (active) AplusTheme.Text else AplusTheme.Muted, fontSize = spec.caption, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(filter.label, color = if (active) Color.White else AplusTheme.Muted, fontSize = spec.caption, fontWeight = FontWeight.Bold, maxLines = 1)
             }
         }
     }
@@ -2245,39 +3138,54 @@ private fun LockListItem(lock: LockDevice, onClick: () -> Unit, spec: UiScaleCon
     }
 }
 
+private data class QuickAccessTarget(
+    val title: String,
+    val code: String,
+    val icon: Int,
+    val route: AppRoute
+)
+
 @Composable
-private fun QuickAccessGrid(spec: UiScaleConfig) {
+private fun QuickAccessGrid(spec: UiScaleConfig, onOpen: (AppRoute) -> Unit) {
     val items = listOf(
-        Triple("Mật khẩu", "UI-03", R.drawable.ic_keypad),
-        Triple("Thẻ", "UI-09", R.drawable.ic_report),
-        Triple("Nhân sự", "UI-08", R.drawable.ic_user),
-        Triple("Cảnh báo", "UI-19", R.drawable.ic_shield),
-        Triple("Gateway", "UI-12", R.drawable.ic_wifi),
-        Triple("Cài đặt", "UI-29", R.drawable.ic_globe)
+        QuickAccessTarget("Mật khẩu", "UI-03", R.drawable.ic_keypad, AppRoute.PasswordManager),
+        QuickAccessTarget("Thẻ", "UI-09", R.drawable.ic_card, AppRoute.CardManager),
+        QuickAccessTarget("Nhân sự", "UI-08", R.drawable.ic_user, AppRoute.FeaturePlaceholder),
+        QuickAccessTarget("Cảnh báo", "UI-19", R.drawable.ic_shield, AppRoute.FeaturePlaceholder),
+        QuickAccessTarget("Gateway", "UI-12", R.drawable.ic_gateway, AppRoute.PairingGateway),
+        QuickAccessTarget("Cài đặt", "UI-29", R.drawable.ic_globe, AppRoute.FeaturePlaceholder)
     )
     Column(verticalArrangement = Arrangement.spacedBy(spec.gapSm)) {
         items.chunked(3).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spec.gapSm)) {
-                row.forEach { item -> QuickAccessItem(item.first, item.second, item.third, Modifier.weight(1f), spec) }
+                row.forEach { item ->
+                    QuickAccessItem(
+                        item = item,
+                        modifier = Modifier.weight(1f),
+                        spec = spec,
+                        onClick = { onOpen(item.route) }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun QuickAccessItem(title: String, code: String, icon: Int, modifier: Modifier, spec: UiScaleConfig) {
+private fun QuickAccessItem(item: QuickAccessTarget, modifier: Modifier, spec: UiScaleConfig, onClick: () -> Unit) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(AplusTheme.CardDark)
             .border(BorderStroke(1.dp, AplusTheme.Stroke), RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
             .padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(Modifier.size(30.dp).clip(CircleShape).background(AplusTheme.Red.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) { AplusIcon(icon, AplusTheme.Red, 15.dp) }
+        Box(Modifier.size(30.dp).clip(CircleShape).background(AplusTheme.Red.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) { AplusIcon(item.icon, AplusTheme.Red, 15.dp) }
         Spacer(Modifier.height(6.dp))
-        Text(title, color = AplusTheme.Text, fontWeight = FontWeight.Bold, fontSize = spec.caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(code, color = AplusTheme.Subtle, fontSize = (spec.caption.value - 1).sp, maxLines = 1)
+        Text(item.title, color = AplusTheme.Text, fontWeight = FontWeight.Bold, fontSize = spec.caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(item.code, color = AplusTheme.Subtle, fontSize = (spec.caption.value - 1).sp, maxLines = 1)
     }
 }
 
@@ -2363,15 +3271,15 @@ private fun AplusBottomTab(selected: MainTab, onTab: (MainTab) -> Unit, spec: Ui
                     .weight(1f)
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(if (active) AplusTheme.Red.copy(alpha = 0.16f) else Color.Transparent)
+                    .background(if (active) AplusTheme.Red else Color.Transparent)
                     .clickable { onTab(tab) }
                     .padding(vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                AplusIcon(tab.icon, if (active) AplusTheme.Red else AplusTheme.Subtle, 17.dp)
+                AplusIcon(tab.icon, if (active) Color.White else AplusTheme.Subtle, 17.dp)
                 Spacer(Modifier.height(3.dp))
-                Text(tab.label, color = if (active) AplusTheme.Text else AplusTheme.Subtle, fontSize = spec.caption, fontWeight = if (active) FontWeight.Black else FontWeight.Medium, maxLines = 1)
+                Text(tab.label, color = if (active) Color.White else AplusTheme.Subtle, fontSize = spec.caption, fontWeight = if (active) FontWeight.Black else FontWeight.Medium, maxLines = 1)
             }
         }
     }
